@@ -578,7 +578,7 @@ LV2_PATCHED_FUNCTION(int, modules_patching, (uint64_t *arg1, uint32_t *arg2))
 		total = 0;
 		
 		#ifdef	DEBUG
-			DPRINTF("hash = %lx\n", hash);
+			//DPRINTF("hash = %lx\n", hash);
 		#endif
 		
 		switch(hash)

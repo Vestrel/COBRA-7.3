@@ -1043,7 +1043,7 @@ int main(void)
 	
 #ifdef DEBUG
 	// "Laboratory"
-	//do_hook_all_syscalls();
+	do_hook_all_syscalls();
 	//do_dump_threads_info_test();
 	//do_dump_processes_test();
 	//do_hook_load_module();
