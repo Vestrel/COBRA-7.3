@@ -131,10 +131,10 @@ LV2_SYSCALL(int, consoleWrite, (const char* message, int length))
 void debug_install(void)
 {
 	suspend_intr();
-	change_function(printf_symbol, debug_printf);
-	change_function(printfnull_symbol, debug_printf);
-	patch_syscall(SYS_TTY_WRITE, ttyWrite);
-	patch_syscall(SYS_CONSOLE_WRITE, consoleWrite);
+	//change_function(printf_symbol, debug_printf);
+	//change_function(printfnull_symbol, debug_printf);
+	//patch_syscall(SYS_TTY_WRITE, ttyWrite);
+	//patch_syscall(SYS_CONSOLE_WRITE, consoleWrite);
 	resume_intr();
 }
 
@@ -225,6 +225,7 @@ int debug_end(void)
 
 int64_t debug_print(const char* buffer, size_t msgsize)
 {
+		
 	if (msgsize > MAX_MESSAGE_SIZE)
 		msgsize = MAX_MESSAGE_SIZE;
 
@@ -271,6 +272,7 @@ int64_t debug_print(const char* buffer, size_t msgsize)
 	int64_t debug_printf(const char* fmt, ...)
 #endif
 {
+	
 	va_list ap;
 
 	if (!debug_initialized)
