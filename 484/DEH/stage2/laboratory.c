@@ -18,6 +18,7 @@
 #include <lv2/pad.h>
 #include <lv2/error.h>
 #include <lv2/symbols.h>
+#include <lv2/thread.h>
 #include <lv1/stor.h>
 #include <lv1/patch.h>
 
@@ -67,8 +68,134 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 		
 		/*if (num != 378 && num != 173 && num != 178 && num != 130 && num != 138 && num != 104 && num != 102 && num != 579 && num != 122 && num != 124
 			&& num != 113 && num != 141 && num != 125 && num != 127 && num != 141) */
+		if (
+		num != SYS_SM_GET_EXT_EVENT2
+		&& num != SYS_SPU_THREAD_GROUP_START
+		&& num != SYS_SPU_THREAD_GROUP_JOIN
+		&& num != SYS_EVENT_QUEUE_RECEIVE
+		&& num != SYS_EVENT_PORT_SEND
+		&& num != SYS_MUTEX_UNLOCK
+		&& num != SYS_MUTEX_LOCK
+		&& num != 579 /*sys_bluetooth_aud_serial_unk1*/
+		&& num != SYS_RWLOCK_RLOCK
+		&& num != SYS_RWLOCK_RUNLOCK
+		&& num != SYS_LWCOND_QUEUE_WAIT
+		&& num != SYS_TIMER_USLEEP
+		&& num != SYS_RWLOCK_WLOCK
+		&& num != SYS_RWLOCK_WUNLOCK
+		//&& num != SYS_HID_MANAGER_CHECK_FOCUS
+		&& num != SYS_NET_RECVFROM
+		&& num != SYS_NET_SELECT
+		&& num != SYS_LWMUTEX_LOCK
+		)
+		{			
 		
-		DPRINTF("syscall %ld %lx %lx %lx %lx %lx %lx %lx %lx\n", num, r3, r4, r5, r6, r7, r8, r9, r10);			
+			if(num == SYS_HID_MANAGER_CHECK_FOCUS) {
+				lv2_printf("%s syscall sys_hid_manager_check_focus()\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL");			
+			}
+			else if(num == SYS_COND_SIGNAL) {
+				lv2_printf("%s syscall sys_cond_signal(cond_id=0x%x)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3);			
+			}
+			else if(num == SYS_MEMORY_ALLOCATE) {
+				lv2_printf("%s syscall sys_memory_allocate(size=0x%x, flags=0x%llx, alloc_addr=*0x%x)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4, r5);			
+			}
+			else if(num == SYS_LWMUTEX_LOCK) {
+				lv2_printf("%s syscall sys_lwmutex_lock(lwmutex=*0x%x, timeout=0x%llx)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4);			
+			}
+			else if(num == SYS_LWMUTEX_UNLOCK) {
+				lv2_printf("%s syscall sys_lwmutex_unlock(lwmutex=*0x%x)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3);			
+			}
+			else if(num == SYS_MEMORY_GET_PAGE_ATTRIBUTE) {
+				lv2_printf("%s syscall sys_memory_get_page_attribute(addr=0x%x, attr=*0x%x)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4);			
+			}
+			else if(num == SYS_NET_INFOCTL) {
+				lv2_printf("%s syscall sys_net_infoctl(cmd=%d, args=*0x%x)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4);			
+			}
+			else if(num == SYS_NET_ABORT) {
+				lv2_printf("%s syscall sys_net_abort(type=%d, arg=0x%x, flags=0x%x)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4, r5);			
+			}
+			else if(num == SYS_NET_IOCTL) {
+				lv2_printf("%s syscall sys_net_bnet_ioctl(socket_id=%d, command=0x%x, args=0x%x)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4, r5);			
+			}
+			else if(num == 514) {
+				lv2_printf("%s syscall sys_hid_manager_514(%lx %lx %lx)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4, r5);			
+			}
+			else if(num == _SYS_PRX_START_MODULE) {
+				lv2_printf("%s syscall sys_prx_start_module(id=0x%x, args=%u, argp=*0x%x, result=*0x%x, flags=0x%x, pOpt=*0x%x)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4, r5, r6, r7, r8);			
+			}
+			else if(num == SYS_HID_MANAGER_READ) {
+				lv2_printf("%s syscall sys_hid_manager_read(handle=0x%x, pkg_id=0x%x, buf=*0x%x, buf_size=0x%llx)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4, r5, r6);			
+			}
+			else if(num == SYS_LWCOND_SIGNAL) {
+				lv2_printf("%s syscall sys_lwcond_signal(lwcond=*0x%x)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3);			
+			}
+			else if(num == SYS_EVENT_QUEUE_DRAIN) {
+				lv2_printf("%s syscall sys_event_queue_drain(equeue_id=0x%x)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3);			
+			}
+			else if(num == SYS_NET_SHUTDOWN) {
+				lv2_printf("%s syscall sys_net_bnet_shutdown(s=%d, how=%d)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4);			
+			}
+			else if(num == SYS_PPU_THREAD_CREATE) {
+				lv2_printf("%s syscall _sys_ppu_thread_create(thread_id=*0x%x, param=*0x%x, arg=0x%llx, unk=0x%llx, prio=%d, stacksize=0x%x, flags=0x%llx, threadname=%s)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4, r5, r6, r7, r8, r9, r10);			
+			}
+			else if(num == SYS_PPU_THREAD_RENAME) {
+				lv2_printf("%s syscall sys_ppu_thread_rename(thread_id=0x%x, name=%s)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4);			
+			}
+			else if(num == SYS_NET_SOCKET) {
+				lv2_printf("%s syscall sys_net_bnet_socket(family=%d, type=%d, protocol=%d)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4, r5);			
+			}
+			else if(num == SYS_NET_CLOSE) {
+/*				uint8_t *thread_info = (uint8_t*)get_current_thread();
+if(thread_info) {
+  lv2_printf("thread_info= ");
+  for(uint16_t i = 0; i < sizeof(thread_t); i++)
+  {
+     lv2_printf("%02x", *(thread_info + i));
+  }
+  lv2_printf("\n");
+}*/
+
+uint8_t *thread_info = (uint8_t*)get_current_thread();
+if(thread_info) {
+  char* buf = (char*)alloc(KB(64), 0x27);
+  if(buf) {
+    char* cur = buf;
+    for(uint16_t i = 0; i < sizeof(thread_s); i++)
+    {
+       cur += lv2_sprintf(cur, "%02x", *(thread_info + i));
+    }
+    lv2_printf("thread_info= %s\n", buf);
+    dealloc(buf, 0x27);
+  }
+}
+
+				lv2_printf("%s syscall sys_net_bnet_close(s=%d)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3);			
+				}
+			else if(num == SYS_NET_SYSCTL) {
+				lv2_printf("%s syscall sys_net_bnet_sysctl(0x%x, 0x%x, 0x%x, *0x%x, 0x%x, 0x%x)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4, r5, r6, r7, r8);			
+			}
+			else if(num == SYS_NET_SENDTO) {
+				lv2_printf("%s syscall sys_net_bnet_sendto(s=%d, buf=*0x%x, len=%u, flags=0x%x, addr=*0x%x, addrlen=%u)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4, r5, r6, r7, r8);			
+			}
+			else if(num == SYS_NET_CONTROL) {
+				lv2_printf("%s syscall sys_net_control(0x%x, %d, *0x%x, %d)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4, r5, r6);			
+			}
+			else if(num == SYS_CELLFSLSEEK) {
+				lv2_printf("%s syscall sys_fs_lseek(fd=%d, offset=0x%llx, whence=0x%x, pos=*0x%x)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4, r5, r6);			
+			}
+			else if(num == SYS_MEMORY_ALLOCATE_FROM_CONTAINER) {
+				lv2_printf("%s syscall sys_memory_allocate_from_container(size=0x%x, cid=0x%x, flags=0x%llx, alloc_addr=*0x%x)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4, r5, r6);			
+			}
+			else if(num == SYS_COND_WAIT) {
+				lv2_printf("%s syscall sys_cond_wait(cond_id=0x%x, timeout=%lld)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4);			
+			}
+			else if(num == SYS_HID_MANAGER_IOCTL) {
+				lv2_printf("%s syscall sys_hid_manager_ioctl(hid_handle=0x%x, pkg_id=0x%llx, buf=*0x%x, buf_size=0x%llx)\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", r3, r4, r5, r6);			
+			}
+			else {
+				lv2_printf("%s %x %s syscall %ld %lx %lx %lx %lx %lx %lx %lx %lx\n", get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL", get_current_thread(), get_current_thread_name(), num, r3, r4, r5, r6, r7, r8, r9, r10);			
+			}
+		}
 	}		
 	
 	resume_intr();
