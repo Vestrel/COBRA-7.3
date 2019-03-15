@@ -23,6 +23,7 @@
 #include "crypto.h"
 #include "mappath.h"
 #include "modulespatch.h"
+#include "syscall_hook.h"
 
 
 //#define ps2emu_entry1_bc 0x165B44
@@ -2383,7 +2384,11 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_8(int, post_cellFsUtilMount, (const char *bl
 		load_boot_plugins();
 		load_boot_plugins_kernel();
 		// update_hashes();
-
+		
+		// Syscall Hook
+		syscall_hook_init();
+		
+		// Remaining code
 		mutex_lock(mutex, 0);
 
 		if (real_disctype == 0)

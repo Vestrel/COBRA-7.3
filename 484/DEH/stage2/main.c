@@ -33,7 +33,6 @@
 #include "sm_ext.h"
 #include "laboratory.h"
 #include "ps3mapi_core.h"
-#include "syscall_hook.h"
 
 // Format of version:
 // byte 0, 7 MS bits -> reserved
@@ -1043,9 +1042,6 @@ int main(void)
 	permissions_patches();
 	
 #ifdef DEBUG
-	// Syscall Hook
-	syscall_hook_init();
-
 	// "Laboratory"
 	//do_dump_threads_info_test();
 	//do_dump_processes_test();
