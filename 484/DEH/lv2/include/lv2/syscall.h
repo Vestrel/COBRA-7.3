@@ -26,6 +26,7 @@
 #define SYS_PPU_THREAD_SET_PRIORITY                                  47
 #define SYS_PPU_THREAD_GET_PRIORITY                                  48
 #define SYS_PPU_THREAD_GET_STACK_INFORMATION                         49
+#define SYS_PPU_THREAD_CREATE										 52
 #define SYS_PPU_THREAD_RENAME                                        56
 #define SYS_PPU_THREAD_RECOVER_PAGE_FAULT                            57
 #define SYS_PPU_THREAD_GET_PAGE_FAULT_CONTEXT                        58
@@ -55,6 +56,8 @@
 #define SYS_SEMAPHORE_WAIT                                           92
 #define SYS_SEMAPHORE_TRYWAIT                                        93
 #define SYS_SEMAPHORE_POST                                           94
+#define SYS_LWMUTEX_LOCK											 97
+#define SYS_LWMUTEX_UNLOCK											 98
 #define SYS_MUTEX_CREATE                                            100
 #define SYS_MUTEX_DESTROY                                           101
 #define SYS_MUTEX_LOCK                                              102
@@ -66,7 +69,13 @@
 #define SYS_COND_SIGNAL                                             108
 #define SYS_COND_SIGNAL_ALL                                         109
 #define SYS_COND_SIGNAL_TO                                          110
+#define SYS_LWCOND_CREATE											111 /* Added */
+#define SYS_LWCOND_DESTROY											112 /* Added */
+#define SYS_LWCOND_QUEUE_WAIT										113 /* Added */
 #define SYS_SEMAPHORE_GET_VALUE                                     114
+#define SYS_LWCOND_SIGNAL											115
+#define SYS_LWCOND_SIGNAL_ALL										116
+#define SYS_LWMUTEX_UNLOCK2											117
 #define SYS_EVENT_FLAG_CLEAR                                        118
 #define SYS_RWLOCK_CREATE                                           120
 #define SYS_RWLOCK_DESTROY                                          121
@@ -201,6 +210,9 @@
 #define _SYS_PRX_LOAD_MODULE_ON_MEMCONTAINER                        497
 #define _SYS_PRX_START                                              498
 #define _SYS_PRX_STOP                                               499
+#define SYS_HID_MANAGER_READ										502
+#define SYS_HID_MANAGER_IOCTL										503
+#define SYS_HID_MANAGER_CHECK_FOCUS									510
 #define SYS_STORAGE_OPEN                                            600
 #define SYS_STORAGE_CLOSE                                           601
 #define SYS_STORAGE_READ                                            602
@@ -251,6 +263,12 @@
 #define SYS_NET_SHUTDOWN					    					712 /* Added */
 #define SYS_NET_SOCKET						    					713 /* Added */
 #define SYS_NET_CLOSE						    					714 /* Added */
+#define SYS_NET_SELECT												716 /* Added */
+#define SYS_NET_ABORT												721
+#define SYS_NET_INFOCTL												722
+#define SYS_NET_CONTROL												723
+#define SYS_NET_IOCTL												724
+#define SYS_NET_SYSCTL												725
 #define SYS_CELLFSOPEN						    					801 /* Added */
 #define SYS_CELLFSREAD						    					802 /* Added */
 #define SYS_CELLFSWRITE						    					803 /* Added */
