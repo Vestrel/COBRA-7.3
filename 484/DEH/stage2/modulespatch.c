@@ -30,6 +30,9 @@
 #define MAX_BOOT_PLUGINS_KERNEL		5
 #define PRX_PATH					"/dev_flash/vsh/module/webftp_server.sprx"
 
+#define SAFE_BOOT_PLUGINS_KERNEL_FILE "/dev_hdd0/plugins/safe_boot_plugins_kernel.txt"
+#define SAFE_BOOT_PLUGINS_KERNEL_SAFETY_FILE "/dev_hdd0/plugins/safety"
+
 LV2_EXPORT int decrypt_func(uint64_t *, uint32_t *);
 
 typedef struct
@@ -1047,8 +1050,10 @@ uint64_t load_plugin_kernel(char *path)
 				void *skprx=alloc(stat.st_size,0x27);
 				if(skprx)
 				{
+					lv2_printf("Loading plugin '%s' at 0x%lx...\n", path, (uint64_t)skprx);
+
 					if(cellFsRead(file, skprx, stat.st_size, &read)==0)
-					{	
+					{
 						f_desc_t f;
 						f.addr = skprx;
 						f.toc = (void *)MKA(TOC);
@@ -1073,27 +1078,16 @@ uint64_t load_plugin_kernel(char *path)
 	return -1;
 }
 
-void load_boot_plugins_kernel(void)
+void load_boot_plugins_kernel_file(char *list_path, uint32_t *current_slot_kernel, uint32_t *num_loaded_kernel)
 {
 	int fd;
-	int current_slot_kernel = 0;
-	int num_loaded_kernel = 0;
 	
-	if (safe_mode)
+	if (cellFsOpen(list_path, CELL_FS_O_RDONLY, &fd, 0, NULL, 0) == 0)
 	{
-		cellFsUnlink(BOOT_PLUGINS_KERNEL_FILE);
-		return;
-	}
-	
-	if (!vsh_process)
-		return;	  // lets wait till vsh so we dont brick the console perma!
-
-	if (cellFsOpen(BOOT_PLUGINS_KERNEL_FILE, CELL_FS_O_RDONLY, &fd, 0, NULL, 0) == 0)
-	{
-		while (num_loaded_kernel < MAX_BOOT_PLUGINS_KERNEL)
+		while (*num_loaded_kernel < MAX_BOOT_PLUGINS_KERNEL)
 		{
 			char path[128];
-			int eof;			
+			int eof;
 			
 			if (read_text_line(fd, path, sizeof(path), &eof) > 0)
 			{
@@ -1101,10 +1095,10 @@ void load_boot_plugins_kernel(void)
 					
 				if (ret >= 0)
 				{
-					DPRINTF("Load boot plugin %s -> %x\n", path, current_slot_kernel);
-					current_slot_kernel++;
-					num_loaded_kernel++;
-				}			
+					DPRINTF("Load boot plugin %s (slot=%x)\n", path, *current_slot_kernel);
+					*current_slot_kernel += 1;
+					*num_loaded_kernel += 1;
+				}
 			}
 			
 			if (eof)
@@ -1112,6 +1106,34 @@ void load_boot_plugins_kernel(void)
 		}
 
 		cellFsClose(fd);
+	}
+}
+
+void load_boot_plugins_kernel(void)
+{
+	uint32_t current_slot_kernel = 0;
+	uint32_t num_loaded_kernel = 0;
+	
+	if (safe_mode)
+	{
+		cellFsUnlink(BOOT_PLUGINS_KERNEL_FILE);
+		cellFsUnlink(SAFE_BOOT_PLUGINS_KERNEL_SAFETY_FILE);
+		return;
+	}
+	
+	if (!vsh_process)
+		return;	  // lets wait till vsh so we dont brick the console perma!
+
+	load_boot_plugins_kernel_file(BOOT_PLUGINS_KERNEL_FILE, &current_slot_kernel, &num_loaded_kernel);
+	
+	// To avoid bricking the console and requiring physical access to fix, we have a safety mechanism here
+	// We only activate the "safe boot plugins" if the safety file is present on disk, and delete it immediately after checking
+	if (cellFsUnlink(SAFE_BOOT_PLUGINS_KERNEL_SAFETY_FILE) != 0) {
+		lv2_printf("Safe Kernel Boot Plugins: "SAFE_BOOT_PLUGINS_KERNEL_SAFETY_FILE" not found, plugins not enabled\n");
+	}
+	else {
+		lv2_printf("Safe Kernel Boot Plugins: "SAFE_BOOT_PLUGINS_KERNEL_SAFETY_FILE" found, plugins enabled!\n");
+		load_boot_plugins_kernel_file(SAFE_BOOT_PLUGINS_KERNEL_FILE, &current_slot_kernel, &num_loaded_kernel);
 	}
 }
 

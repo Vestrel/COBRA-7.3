@@ -24,7 +24,7 @@
 
 #include "common.h"
 
-#define SYSCALL_HOOKS_ENABLE_FILE_PATH "/dev_hdd0/packages/syscall_hooks"
+#define SYSCALL_HOOKS_ENABLE_FILE_PATH "/dev_hdd0/packages/stage2_syscall_hooks"
 
 /*
  * Syscall Printing Helpers
@@ -222,11 +222,11 @@ void syscall_hook_init(void)
 	// We only activate the hook if /dev_hdd0/syscall_hooks is present on disk, and delete it immediately after checking
 	if (cellFsUnlink(SYSCALL_HOOKS_ENABLE_FILE_PATH) != 0)
 	{
-		lv2_printf("Syscall Hooks: "SYSCALL_HOOKS_ENABLE_FILE_PATH" not found, hooks not enabled\n");
+		lv2_printf("Stage2 Syscall Hooks: "SYSCALL_HOOKS_ENABLE_FILE_PATH" not found, hooks not enabled\n");
 		return;
 	}
 
 	// Actually enable the syscall hooks
-	lv2_printf("Syscall Hooks: "SYSCALL_HOOKS_ENABLE_FILE_PATH" found, hooks enabled!\n");
+	lv2_printf("Stage2 Syscall Hooks: "SYSCALL_HOOKS_ENABLE_FILE_PATH" found, hooks enabled!\n");
 	set_syscall_handler(syscall_handler);
 }
