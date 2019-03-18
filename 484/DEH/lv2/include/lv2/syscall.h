@@ -213,6 +213,7 @@
 #define SYS_HID_MANAGER_READ										502
 #define SYS_HID_MANAGER_IOCTL										503
 #define SYS_HID_MANAGER_CHECK_FOCUS									510
+#define SYS_HID_MANAGER_514                                         514
 #define SYS_STORAGE_OPEN                                            600
 #define SYS_STORAGE_CLOSE                                           601
 #define SYS_STORAGE_READ                                            602
