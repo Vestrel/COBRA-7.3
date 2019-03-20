@@ -26,7 +26,7 @@ void default_syscall_printer(syscall_t *sc)
 			*(cur++) = ' ';
 		}
 
-		cur += sprintf(info->args[i].fmt, (char*)sc->args[i]);
+		cur += sprintf(cur, info->arg_fmt[i], sc->args[i]);
 	}
 
 	// Actually print

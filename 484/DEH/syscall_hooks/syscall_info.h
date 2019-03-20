@@ -19,18 +19,14 @@ struct syscall_info_t;
 // If it returns 0, the default dumper is still executed
 typedef int (sci_callback)(struct syscall_t *sc);
 
-typedef struct {
-	char fmt[SCI_ARG_FMT_MAX+1];
-} syscall_info_arg_t;
-
 typedef struct syscall_info_t {
 	uint16_t num;
 	uint8_t nargs;
-	char name[SCI_NAME_MAX+1];
+	char *name;
 
 	sci_callback *cb; // Callback for custom dumping
 	
-	syscall_info_arg_t args[SCI_ARGS_MAX]; // Information about the various parameters
+	char* arg_fmt[SCI_ARGS_MAX]; // Information about the various parameters
 } syscall_info_t;
 
 extern syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS];

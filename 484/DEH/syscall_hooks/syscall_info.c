@@ -10,16 +10,16 @@
  * Initial syscall information
  * Copied from RPCS3 https://github.com/RPCS3/rpcs3/blob/master/rpcs3/Emu/Cell/lv2/lv2.cpp
  */
-#define BIND_FUNC(x) { .name = {"x"} }
+#define BIND_FUNC(x) "x"
 #define null_func BIND_FUNC("")
 #define uns_func null_func
 
-syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
+char* syscall_names[MAX_NUM_OF_SYSTEM_CALLS] =
 {
 	null_func,
 	BIND_FUNC(sys_process_getpid),                          //1   (0x001)
 	BIND_FUNC(sys_process_wait_for_child),                  //2   (0x002)  ROOT
-	null_func,//BIND_FUNC(sys_process_exit),                //3   (0x003)
+	BIND_FUNC(sys_process_exit),                //3   (0x003)
 	BIND_FUNC(sys_process_get_status),                      //4   (0x004)  DBG
 	BIND_FUNC(sys_process_detach_child),                    //5   (0x005)  DBG
 
@@ -34,17 +34,17 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	BIND_FUNC(sys_process_getppid),                         //18  (0x012)
 	BIND_FUNC(sys_process_kill),                            //19  (0x013)
 	uns_func,                                               //20  (0x014)  UNS
-	null_func,//BIND_FUNC(_sys_process_spawn),              //21  (0x015)  DBG
+	BIND_FUNC(_sys_process_spawn),              //21  (0x015)  DBG
 	BIND_FUNC(_sys_process_exit),                           //22  (0x016)
 	BIND_FUNC(sys_process_wait_for_child2),                 //23  (0x017)  DBG
-	null_func,//BIND_FUNC(),                                //24  (0x018)  DBG
+	BIND_FUNC(),                                //24  (0x018)  DBG
 	BIND_FUNC(sys_process_get_sdk_version),                 //25  (0x019)
 	BIND_FUNC(_sys_process_exit2),                          //26  (0x01A)
 	BIND_FUNC(sys_process_spawns_a_self2),                  //27  (0x01B)  DBG
-	null_func,//BIND_FUNC(_sys_process_get_number_of_object)//28  (0x01C)  ROOT
+	BIND_FUNC(_sys_process_get_number_of_object)//28  (0x01C)  ROOT
 	BIND_FUNC(sys_process_get_id),                          //29  (0x01D)  ROOT
 	BIND_FUNC(_sys_process_get_paramsfo),                   //30  (0x01E)
-	null_func,//BIND_FUNC(sys_process_get_ppu_guid),        //31  (0x01F)
+	BIND_FUNC(sys_process_get_ppu_guid),        //31  (0x01F)
 
 	uns_func, uns_func ,uns_func , uns_func ,uns_func, uns_func ,uns_func, uns_func ,uns_func, //32-40  UNS
 
@@ -57,8 +57,8 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	BIND_FUNC(sys_ppu_thread_set_priority),                 //47  (0x02F)  DBG
 	BIND_FUNC(sys_ppu_thread_get_priority),                 //48  (0x030)
 	BIND_FUNC(sys_ppu_thread_get_stack_information),        //49  (0x031)
-	null_func,//BIND_FUNC(sys_ppu_thread_stop),             //50  (0x032)  ROOT
-	null_func,//BIND_FUNC(sys_ppu_thread_restart),          //51  (0x033)  ROOT
+	BIND_FUNC(sys_ppu_thread_stop),             //50  (0x032)  ROOT
+	BIND_FUNC(sys_ppu_thread_restart),          //51  (0x033)  ROOT
 	BIND_FUNC(_sys_ppu_thread_create),                      //52  (0x034)  DBG
 	BIND_FUNC(sys_ppu_thread_start),                        //53  (0x035)
 	null_func,//BIND_FUNC(sys_ppu_...),                     //54  (0x036)  ROOT
@@ -84,10 +84,10 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	BIND_FUNC(sys_timer_stop),                              //74  (0x04A)
 	BIND_FUNC(sys_timer_connect_event_queue),               //75  (0x04B)
 	BIND_FUNC(sys_timer_disconnect_event_queue),            //76  (0x04C)
-	null_func,//BIND_FUNC(sys_trace_create2_in_cbepm),      //77  (0x04D)
+	BIND_FUNC(sys_trace_create2_in_cbepm),      //77  (0x04D)
 	null_func,//BIND_FUNC(sys_trace_...)                    //78  (0x04E)
 	uns_func,                                               //79  (0x04F)  UNS
-	null_func,//BIND_FUNC(sys_interrupt_tag_create)         //80  (0x050)
+	BIND_FUNC(sys_interrupt_tag_create)         //80  (0x050)
 	BIND_FUNC(sys_interrupt_tag_destroy),                   //81  (0x051)
 	BIND_FUNC(sys_event_flag_create),                       //82  (0x052)
 	BIND_FUNC(sys_event_flag_destroy),                      //83  (0x053)
@@ -150,10 +150,10 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	BIND_FUNC(sys_event_port_connect_ipc),                  //140 (0x08C)
 	BIND_FUNC(sys_timer_usleep),                            //141 (0x08D)
 	BIND_FUNC(sys_timer_sleep),                             //142 (0x08E)
-	null_func,//BIND_FUNC(sys_time_set_timezone)            //143 (0x08F)  ROOT
+	BIND_FUNC(sys_time_set_timezone)            //143 (0x08F)  ROOT
 	BIND_FUNC(sys_time_get_timezone),                       //144 (0x090)
 	BIND_FUNC(sys_time_get_current_time),                   //145 (0x091)
-	null_func,//BIND_FUNC(sys_time_get_system_time),        //146 (0x092)  ROOT
+	BIND_FUNC(sys_time_get_system_time),        //146 (0x092)  ROOT
 	BIND_FUNC(sys_time_get_timebase_frequency),             //147 (0x093)
 	BIND_FUNC(_sys_rwlock_trywlock),                        //148 (0x094)
 	uns_func,                                               //149 (0x095)  UNS
@@ -174,7 +174,7 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	uns_func,                                               //164 (0x0A4)  UNS
 	BIND_FUNC(sys_spu_thread_get_exit_status),              //165 (0x0A5)
 	BIND_FUNC(sys_spu_thread_set_argument),                 //166 (0x0A6)
-	null_func,//BIND_FUNC(sys_spu_thread_group_start_on_exit)//167(0x0A7)
+	BIND_FUNC(sys_spu_thread_group_start_on_exit)//167(0x0A7)
 	uns_func,                                               //168 (0x0A8)  UNS
 	BIND_FUNC(sys_spu_initialize),                          //169 (0x0A9)
 	BIND_FUNC(sys_spu_thread_group_create),                 //170 (0x0AA)
@@ -212,42 +212,42 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	null_func, null_func, null_func, null_func, null_func,  //209  UNS?
 	null_func, null_func, null_func, BIND_FUNC(sys_console_write), null_func,  //214  UNS?
 
-	uns_func,//BIND_FUNC(sys_dbg_mat_set_condition)        //215 (0x0D7)
-	uns_func,//BIND_FUNC(sys_dbg_mat_get_condition)        //216 (0x0D8)
-	uns_func,//BIND_FUNC(sys_dbg_...)                       //217 (0x0D9) DBG  UNS?
-	uns_func,//BIND_FUNC(sys_dbg_...)                       //218 (0x0DA) DBG  UNS?
-	uns_func,//BIND_FUNC(sys_dbg_...)                       //219 (0x0DB) DBG  UNS?
+	BIND_FUNC(sys_dbg_mat_set_condition)        //215 (0x0D7)
+	BIND_FUNC(sys_dbg_mat_get_condition)        //216 (0x0D8)
+	null_func,//BIND_FUNC(sys_dbg_...)                       //217 (0x0D9) DBG  UNS?
+	null_func,//BIND_FUNC(sys_dbg_...)                       //218 (0x0DA) DBG  UNS?
+	null_func,//BIND_FUNC(sys_dbg_...)                       //219 (0x0DB) DBG  UNS?
 
 	null_func, null_func, null_func, null_func, null_func,  //224  UNS
 	null_func, null_func, null_func, null_func, null_func,  //229  UNS?
 
-	null_func,//BIND_FUNC(sys_isolated_spu_create)          //230 (0x0E6)  ROOT
-	null_func,//BIND_FUNC(sys_isolated_spu_destroy)         //231 (0x0E7)  ROOT
-	null_func,//BIND_FUNC(sys_isolated_spu_start)           //232 (0x0E8)  ROOT
-	null_func,//BIND_FUNC(sys_isolated_spu_create_interrupt_tag) //233 (0x0E9)  ROOT
-	null_func,//BIND_FUNC(sys_isolated_spu_set_int_mask)    //234 (0x0EA)  ROOT
-	null_func,//BIND_FUNC(sys_isolated_spu_get_int_mask)    //235 (0x0EB)  ROOT
-	null_func,//BIND_FUNC(sys_isolated_spu_set_int_stat)    //236 (0x0EC)  ROOT
-	null_func,//BIND_FUNC(sys_isolated_spu_get_int_stat)    //237 (0x0ED)  ROOT
-	null_func,//BIND_FUNC(sys_isolated_spu_set_spu_cfg)     //238 (0x0EE)  ROOT
-	null_func,//BIND_FUNC(sys_isolated_spu_get_spu_cfg)     //239 (0x0EF)  ROOT
-	null_func,//BIND_FUNC(sys_isolated_spu_read_puint_mb)   //240 (0x0F0)  ROOT
+	BIND_FUNC(sys_isolated_spu_create)          //230 (0x0E6)  ROOT
+	BIND_FUNC(sys_isolated_spu_destroy)         //231 (0x0E7)  ROOT
+	BIND_FUNC(sys_isolated_spu_start)           //232 (0x0E8)  ROOT
+	BIND_FUNC(sys_isolated_spu_create_interrupt_tag) //233 (0x0E9)  ROOT
+	BIND_FUNC(sys_isolated_spu_set_int_mask)    //234 (0x0EA)  ROOT
+	BIND_FUNC(sys_isolated_spu_get_int_mask)    //235 (0x0EB)  ROOT
+	BIND_FUNC(sys_isolated_spu_set_int_stat)    //236 (0x0EC)  ROOT
+	BIND_FUNC(sys_isolated_spu_get_int_stat)    //237 (0x0ED)  ROOT
+	BIND_FUNC(sys_isolated_spu_set_spu_cfg)     //238 (0x0EE)  ROOT
+	BIND_FUNC(sys_isolated_spu_get_spu_cfg)     //239 (0x0EF)  ROOT
+	BIND_FUNC(sys_isolated_spu_read_puint_mb)   //240 (0x0F0)  ROOT
 	uns_func, uns_func, uns_func,                           //241-243 ROOT  UNS
-	null_func,//BIND_FUNC(sys_spu_thread_group_system_set_next_group) //244 (0x0F4)  ROOT
-	null_func,//BIND_FUNC(sys_spu_thread_group_system_unset_next_group) //245 (0x0F5)  ROOT
-	null_func,//BIND_FUNC(sys_spu_thread_group_system_set_switch_group) //246 (0x0F6)  ROOT
-	null_func,//BIND_FUNC(sys_spu_thread_group_system_unset_switch_group) //247 (0x0F7)  ROOT
+	BIND_FUNC(sys_spu_thread_group_system_set_next_group) //244 (0x0F4)  ROOT
+	BIND_FUNC(sys_spu_thread_group_system_unset_next_group) //245 (0x0F5)  ROOT
+	BIND_FUNC(sys_spu_thread_group_system_set_switch_group) //246 (0x0F6)  ROOT
+	BIND_FUNC(sys_spu_thread_group_system_unset_switch_group) //247 (0x0F7)  ROOT
 	null_func,//BIND_FUNC(sys_spu_thread_group...)          //248 (0x0F8)  ROOT
 	null_func,//BIND_FUNC(sys_spu_thread_group...)          //249 (0x0F9)  ROOT
-	null_func,//BIND_FUNC(sys_spu_thread_group_set_cooperative_victims) //250 (0x0FA)
+	BIND_FUNC(sys_spu_thread_group_set_cooperative_victims) //250 (0x0FA)
 	BIND_FUNC(sys_spu_thread_group_connect_event_all_threads), //251 (0x0FB)
 	BIND_FUNC(sys_spu_thread_group_disconnect_event_all_threads), //252 (0x0FC)
 	null_func,//BIND_FUNC(sys_spu_thread_group...)          //253 (0x0FD)
-	null_func,//BIND_FUNC(sys_spu_thread_group_log)         //254 (0x0FE)
+	BIND_FUNC(sys_spu_thread_group_log)         //254 (0x0FE)
 
 	uns_func, uns_func, uns_func, uns_func, uns_func,       //255-259  UNS
 
-	null_func,//BIND_FUNC(sys_spu_image_open_by_fd)         //260 (0x104)
+	BIND_FUNC(sys_spu_image_open_by_fd)         //260 (0x104)
 
 	uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, //261-269  UNS
 	uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, //270-279  UNS
@@ -268,8 +268,8 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	BIND_FUNC(sys_vm_test),                                 //311 (0x137)
 	BIND_FUNC(sys_vm_get_statistics),                       //312 (0x138)
 	BIND_FUNC(sys_vm_memory_map_different),				    //313 (0x139) //BIND_FUNC(sys_vm_memory_map (different))
-	null_func,//BIND_FUNC(sys_...)                          //314 (0x13A)
-	null_func,//BIND_FUNC(sys_...)                          //315 (0x13B)
+	null_func,//null_func,//BIND_FUNC(sys_...)                          //314 (0x13A)
+	null_func,//null_func,//BIND_FUNC(sys_...)                          //315 (0x13B)
 
 	uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, //316-323  UNS
 
@@ -282,18 +282,18 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	BIND_FUNC(sys_mmapper_allocate_address),                //330 (0x14A)
 	BIND_FUNC(sys_mmapper_free_address),                    //331 (0x14B)
 	BIND_FUNC(sys_mmapper_allocate_shared_memory),          //332 (0x14C)
-	null_func,//BIND_FUNC(sys_mmapper_set_shared_memory_flag)//333(0x14D)
+	BIND_FUNC(sys_mmapper_set_shared_memory_flag)//333(0x14D)
 	BIND_FUNC(sys_mmapper_map_shared_memory),               //334 (0x14E)
 	BIND_FUNC(sys_mmapper_unmap_shared_memory),             //335 (0x14F)
 	BIND_FUNC(sys_mmapper_change_address_access_right),     //336 (0x150)
 	BIND_FUNC(sys_mmapper_search_and_map),                  //337 (0x151)
-	null_func,//BIND_FUNC(sys_mmapper_get_shared_memory_attribute) //338 (0x152)
+	BIND_FUNC(sys_mmapper_get_shared_memory_attribute) //338 (0x152)
 	BIND_FUNC(sys_mmapper_339),                             //339 (0x153)
 	null_func,//BIND_FUNC(sys_...)                          //340 (0x154)
 	BIND_FUNC(sys_memory_container_create),                 //341 (0x155)
 	BIND_FUNC(sys_memory_container_destroy),                //342 (0x156)
 	BIND_FUNC(sys_memory_container_get_size),               //343 (0x157)
-	null_func,//BIND_FUNC(sys_memory_budget_set)            //344 (0x158)
+	BIND_FUNC(sys_memory_budget_set)            //344 (0x158)
 	null_func,//BIND_FUNC(sys_memory_...)                   //345 (0x159)
 	null_func,//BIND_FUNC(sys_memory_...)                   //346 (0x15A)
 	uns_func,                                               //347 (0x15B)  UNS
@@ -302,15 +302,15 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	BIND_FUNC(sys_memory_allocate_from_container),          //350 (0x15E)
 	BIND_FUNC(sys_memory_get_page_attribute),               //351 (0x15F)
 	BIND_FUNC(sys_memory_get_user_memory_size),             //352 (0x160)
-	null_func,//BIND_FUNC(sys_memory_get_user_memory_stat)  //353 (0x161)
+	BIND_FUNC(sys_memory_get_user_memory_stat)  //353 (0x161)
 	null_func,//BIND_FUNC(sys_memory_...)                   //354 (0x162)
 	null_func,//BIND_FUNC(sys_memory_...)                   //355 (0x163)
-	null_func,//BIND_FUNC(sys_memory_allocate_colored)      //356 (0x164)
+	BIND_FUNC(sys_memory_allocate_colored)      //356 (0x164)
 	null_func,//BIND_FUNC(sys_memory_...)                   //357 (0x165)
 	null_func,//BIND_FUNC(sys_memory_...)                   //358 (0x166)
 	null_func,//BIND_FUNC(sys_memory_...)                   //359 (0x167)
 	null_func,//BIND_FUNC(sys_memory_...)                   //360 (0x168)
-	null_func,//BIND_FUNC(sys_memory_allocate_from_container_colored) //361 (0x169)
+	BIND_FUNC(sys_memory_allocate_from_container_colored) //361 (0x169)
 	BIND_FUNC(sys_mmapper_allocate_shared_memory_from_container),//362 (0x16A)
 	null_func,//BIND_FUNC(sys_mmapper_...)                  //363 (0x16B)
 	null_func,//BIND_FUNC(sys_mmapper_...)                  //364 (0x16C)
@@ -320,32 +320,32 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	BIND_FUNC(sys_uart_send),                               //369 (0x171)  ROOT
 	BIND_FUNC(sys_uart_get_params),                         //370 (0x172)  ROOT
 	uns_func,                                               //371 (0x173)  UNS
-	null_func,//BIND_FUNC(sys_game_watchdog_start)          //372 (0x174)
-	null_func,//BIND_FUNC(sys_game_watchdog_stop)           //373 (0x175)
-	null_func,//BIND_FUNC(sys_game_watchdog_clear)          //374 (0x176)
-	null_func,//BIND_FUNC(sys_game_set_system_sw_version)   //375 (0x177)  ROOT
-	null_func,//BIND_FUNC(sys_game_get_system_sw_version)   //376 (0x178)  ROOT
-	null_func,//BIND_FUNC(sys_sm_set_shop_mode)             //377 (0x179)  ROOT
+	BIND_FUNC(sys_game_watchdog_start)          //372 (0x174)
+	BIND_FUNC(sys_game_watchdog_stop)           //373 (0x175)
+	BIND_FUNC(sys_game_watchdog_clear)          //374 (0x176)
+	BIND_FUNC(sys_game_set_system_sw_version)   //375 (0x177)  ROOT
+	BIND_FUNC(sys_game_get_system_sw_version)   //376 (0x178)  ROOT
+	BIND_FUNC(sys_sm_set_shop_mode)             //377 (0x179)  ROOT
 	BIND_FUNC(sys_sm_get_ext_event2),                       //378 (0x17A)  ROOT
 	BIND_FUNC(sys_sm_shutdown),                             //379 (0x17B)  ROOT
 	BIND_FUNC(sys_sm_get_params),                           //380 (0x17C)  DBG
-	null_func,//BIND_FUNC(sys_sm_get_inter_lpar_parameter)  //381 (0x17D)  ROOT
-	null_func,//BIND_FUNC(sys_sm_initialize)                //382 (0x17E)  ROOT
-	null_func,//BIND_FUNC(sys_game_get_temperature)         //383 (0x17F)  ROOT
-	null_func,//BIND_FUNC(sys_sm_get_tzpb)                  //384 (0x180)  ROOT
-	null_func,//BIND_FUNC(sys_sm_request_led)               //385 (0x181)  ROOT
+	BIND_FUNC(sys_sm_get_inter_lpar_parameter)  //381 (0x17D)  ROOT
+	BIND_FUNC(sys_sm_initialize)                //382 (0x17E)  ROOT
+	BIND_FUNC(sys_game_get_temperature)         //383 (0x17F)  ROOT
+	BIND_FUNC(sys_sm_get_tzpb)                  //384 (0x180)  ROOT
+	BIND_FUNC(sys_sm_request_led)               //385 (0x181)  ROOT
 	BIND_FUNC(sys_sm_control_led),                          //386 (0x182)  ROOT
-	null_func,//BIND_FUNC(sys_sm_get_system_info)           //387 (0x183)  DBG
-	null_func,//BIND_FUNC(sys_sm_ring_buzzer)               //388 (0x184)  ROOT
-	null_func,//BIND_FUNC(sys_sm_set_fan_policy)            //389 (0x185)  PM
-	null_func,//BIND_FUNC(sys_sm_request_error_log)         //390 (0x186)  ROOT
-	null_func,//BIND_FUNC(sys_sm_request_be_count)          //391 (0x187)  ROOT
+	BIND_FUNC(sys_sm_get_system_info)           //387 (0x183)  DBG
+	BIND_FUNC(sys_sm_ring_buzzer)               //388 (0x184)  ROOT
+	BIND_FUNC(sys_sm_set_fan_policy)            //389 (0x185)  PM
+	BIND_FUNC(sys_sm_request_error_log)         //390 (0x186)  ROOT
+	BIND_FUNC(sys_sm_request_be_count)          //391 (0x187)  ROOT
 	BIND_FUNC(sys_sm_ring_buzzer),                          //392 (0x188)  ROOT
-	null_func,//BIND_FUNC(sys_sm_get_hw_config)             //393 (0x189)  ROOT
-	null_func,//BIND_FUNC(sys_sm_request_scversion)         //394 (0x18A)  ROOT
-	null_func,//BIND_FUNC(sys_sm_request_system_event_log)  //395 (0x18B)  PM
-	null_func,//BIND_FUNC(sys_sm_set_rtc_alarm)             //396 (0x18C)  ROOT
-	null_func,//BIND_FUNC(sys_sm_get_rtc_alarm)             //397 (0x18D)  ROOT
+	BIND_FUNC(sys_sm_get_hw_config)             //393 (0x189)  ROOT
+	BIND_FUNC(sys_sm_request_scversion)         //394 (0x18A)  ROOT
+	BIND_FUNC(sys_sm_request_system_event_log)  //395 (0x18B)  PM
+	BIND_FUNC(sys_sm_set_rtc_alarm)             //396 (0x18C)  ROOT
+	BIND_FUNC(sys_sm_get_rtc_alarm)             //397 (0x18D)  ROOT
 	BIND_FUNC(sys_console_write),                           //398 (0x18E)  ROOT
 	uns_func,                                               //399 (0x18F)  UNS
 	null_func,//BIND_FUNC(sys_sm_...)                       //400 (0x190)  PM
@@ -356,11 +356,11 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	null_func,//BIND_FUNC(sys_...)                          //405 (0x195)  PM
 	null_func,//BIND_FUNC(sys_...)                          //406 (0x196)  PM
 	null_func,//BIND_FUNC(sys_...)                          //407 (0x197)  PM
-	null_func,//BIND_FUNC(sys_sm_get_tzpb)                  //408 (0x198)  PM
-	null_func,//BIND_FUNC(sys_sm_get_fan_policy)            //409 (0x199)  PM
-	null_func,//BIND_FUNC(sys_game_board_storage_read)      //410 (0x19A)
-	null_func,//BIND_FUNC(sys_game_board_storage_write)     //411 (0x19B)
-	null_func,//BIND_FUNC(sys_game_get_rtc_status)          //412 (0x19C)
+	BIND_FUNC(sys_sm_get_tzpb)                  //408 (0x198)  PM
+	BIND_FUNC(sys_sm_get_fan_policy)            //409 (0x199)  PM
+	BIND_FUNC(sys_game_board_storage_read)      //410 (0x19A)
+	BIND_FUNC(sys_game_board_storage_write)     //411 (0x19B)
+	BIND_FUNC(sys_game_get_rtc_status)          //412 (0x19C)
 	null_func,//BIND_FUNC(sys_...)                          //413 (0x19D)  ROOT
 	null_func,//BIND_FUNC(sys_...)                          //414 (0x19E)  ROOT
 	null_func,//BIND_FUNC(sys_...)                          //415 (0x19F)  ROOT
@@ -370,17 +370,17 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, //430-439  UNS
 	uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, //440-449  UNS
 
-	null_func,//BIND_FUNC(sys_overlay_load_module)          //450 (0x1C2)
-	null_func,//BIND_FUNC(sys_overlay_unload_module)        //451 (0x1C3)
-	null_func,//BIND_FUNC(sys_overlay_get_module_list)      //452 (0x1C4)
-	null_func,//BIND_FUNC(sys_overlay_get_module_info)      //453 (0x1C5)
-	null_func,//BIND_FUNC(sys_overlay_load_module_by_fd)    //454 (0x1C6)
-	null_func,//BIND_FUNC(sys_overlay_get_module_info2)     //455 (0x1C7)
-	null_func,//BIND_FUNC(sys_overlay_get_sdk_version)      //456 (0x1C8)
-	null_func,//BIND_FUNC(sys_overlay_get_module_dbg_info)  //457 (0x1C9)
-	null_func,//BIND_FUNC(sys_overlay_get_module_dbg_info)  //458 (0x1CA)
+	BIND_FUNC(sys_overlay_load_module)          //450 (0x1C2)
+	BIND_FUNC(sys_overlay_unload_module)        //451 (0x1C3)
+	BIND_FUNC(sys_overlay_get_module_list)      //452 (0x1C4)
+	BIND_FUNC(sys_overlay_get_module_info)      //453 (0x1C5)
+	BIND_FUNC(sys_overlay_load_module_by_fd)    //454 (0x1C6)
+	BIND_FUNC(sys_overlay_get_module_info2)     //455 (0x1C7)
+	BIND_FUNC(sys_overlay_get_sdk_version)      //456 (0x1C8)
+	BIND_FUNC(sys_overlay_get_module_dbg_info)  //457 (0x1C9)
+	BIND_FUNC(sys_overlay_get_module_dbg_info)  //458 (0x1CA)
 	uns_func,                                               //459 (0x1CB)  UNS
-	null_func,//BIND_FUNC(sys_prx_dbg_get_module_id_list)   //460 (0x1CC)  ROOT
+	BIND_FUNC(sys_prx_dbg_get_module_id_list)   //460 (0x1CC)  ROOT
 	BIND_FUNC(_sys_prx_get_module_id_by_address),           //461 (0x1CD)
 	uns_func,                                               //462 (0x1CE)  DEX
 	BIND_FUNC(_sys_prx_load_module_by_fd),                  //463 (0x1CF)
@@ -390,8 +390,8 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	BIND_FUNC(sys_prx_get_ppu_guid),                        //467 (0x1D3)
 	null_func,//BIND_FUNC(sys_...)                          //468 (0x1D4) ROOT
 	uns_func,                                               //469 (0x1D5)  UNS
-	null_func,//BIND_FUNC(sys_npdrm_check_ekc)              //470 (0x1D6)  ROOT
-	null_func,//BIND_FUNC(sys_npdrm_regist_ekc)             //471 (0x1D7)  ROOT
+	BIND_FUNC(sys_npdrm_check_ekc)              //470 (0x1D6)  ROOT
+	BIND_FUNC(sys_npdrm_regist_ekc)             //471 (0x1D7)  ROOT
 	null_func,//BIND_FUNC(sys_...)                          //472 (0x1D8)  ROOT
 	null_func,//BIND_FUNC(sys_...)                          //473 (0x1D9)
 	null_func,//BIND_FUNC(sys_...)                          //474 (0x1DA)
@@ -412,8 +412,8 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	BIND_FUNC(_sys_prx_unlink_library),                     //489 (0x1E9)
 	BIND_FUNC(_sys_prx_query_library),                      //490 (0x1EA)
 	uns_func,                                               //491 (0x1EB)  UNS
-	null_func,//BIND_FUNC(sys_prx_dbg_get_module_list)      //492 (0x1EC)  DBG
-	null_func,//BIND_FUNC(sys_prx_dbg_get_module_info)      //493 (0x1ED)  DBG
+	BIND_FUNC(sys_prx_dbg_get_module_list)      //492 (0x1EC)  DBG
+	BIND_FUNC(sys_prx_dbg_get_module_info)      //493 (0x1ED)  DBG
 	BIND_FUNC(_sys_prx_get_module_list),                    //494 (0x1EE)
 	BIND_FUNC(_sys_prx_get_module_info),                    //495 (0x1EF)
 	BIND_FUNC(_sys_prx_get_module_id_by_name),              //496 (0x1F0)
@@ -421,17 +421,17 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	BIND_FUNC(_sys_prx_start),                              //498 (0x1F2)
 	BIND_FUNC(_sys_prx_stop),                               //499 (0x1F3)
 	BIND_FUNC(sys_hid_manager_open),                        //500 (0x1F4)
-	null_func,//BIND_FUNC(sys_hid_manager_close)            //501 (0x1F5)
+	BIND_FUNC(sys_hid_manager_close)            //501 (0x1F5)
 	BIND_FUNC(sys_hid_manager_read),                        //502 (0x1F6)  ROOT
 	BIND_FUNC(sys_hid_manager_ioctl),                       //503 (0x1F7)
-	null_func,//BIND_FUNC(sys_hid_manager_map_logical_id_to_port_id) //504 (0x1F8)  ROOT
-	null_func,//BIND_FUNC(sys_hid_manager_unmap_logical_id_to_port_id) //505 (0x1F9)  ROOT
+	BIND_FUNC(sys_hid_manager_map_logical_id_to_port_id) //504 (0x1F8)  ROOT
+	BIND_FUNC(sys_hid_manager_unmap_logical_id_to_port_id) //505 (0x1F9)  ROOT
 	BIND_FUNC(sys_hid_manager_add_hot_key_observer),        //506 (0x1FA)  ROOT
-	null_func,//BIND_FUNC(sys_hid_manager_remove_hot_key_observer) //507 (0x1FB)  ROOT
-	null_func,//BIND_FUNC(sys_hid_manager_grab_focus)       //508 (0x1FC)  ROOT
-	null_func,//BIND_FUNC(sys_hid_manager_release_focus)    //509 (0x1FD)  ROOT
+	BIND_FUNC(sys_hid_manager_remove_hot_key_observer) //507 (0x1FB)  ROOT
+	BIND_FUNC(sys_hid_manager_grab_focus)       //508 (0x1FC)  ROOT
+	BIND_FUNC(sys_hid_manager_release_focus)    //509 (0x1FD)  ROOT
 	BIND_FUNC(sys_hid_manager_check_focus),                 //510 (0x1FE)
-	null_func,//BIND_FUNC(sys_hid_manager_set_master_process) //511 (0x1FF)  ROOT
+	BIND_FUNC(sys_hid_manager_set_master_process) //511 (0x1FF)  ROOT
 	BIND_FUNC(sys_hid_manager_is_process_permission_root),  //512 (0x200)  ROOT
 	null_func,//BIND_FUNC(sys_hid_manager_...)              //513 (0x201)
 	BIND_FUNC(sys_hid_manager_514),                         //514 (0x202)
@@ -440,12 +440,12 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	BIND_FUNC(sys_config_close),                            //517 (0x205)
 	BIND_FUNC(sys_config_get_service_event),                //518 (0x206)
 	BIND_FUNC(sys_config_add_service_listener),             //519 (0x207)
-	null_func,//BIND_FUNC(sys_config_remove_service_listener) //520 (0x208)
+	BIND_FUNC(sys_config_remove_service_listener) //520 (0x208)
 	BIND_FUNC(sys_config_register_service),                 //521 (0x209)
-	null_func,//BIND_FUNC(sys_config_unregister_service)    //522 (0x20A)
-	null_func,//BIND_FUNC(sys_config_io_event)              //523 (0x20B)
-	null_func,//BIND_FUNC(sys_config_register_io_error_listener) //524 (0x20C)
-	null_func,//BIND_FUNC(sys_config_unregister_io_error_listener) //525 (0x20D)
+	BIND_FUNC(sys_config_unregister_service)    //522 (0x20A)
+	BIND_FUNC(sys_config_io_event)              //523 (0x20B)
+	BIND_FUNC(sys_config_register_io_error_listener) //524 (0x20C)
+	BIND_FUNC(sys_config_unregister_io_error_listener) //525 (0x20D)
 	uns_func, uns_func, uns_func, uns_func,                 //526-529  UNS
 	BIND_FUNC(sys_usbd_initialize),                         //530 (0x212)
 	BIND_FUNC(sys_usbd_finalize),                           //531 (0x213)
@@ -487,12 +487,12 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	null_func,//BIND_FUNC(sys_...)                          //567 (0x237)
 	null_func,//BIND_FUNC(sys_...)                          //568 (0x238)
 	null_func,//BIND_FUNC(sys_...)                          //569 (0x239)
-	null_func,//BIND_FUNC(sys_pad_ldd_register_controller)  //570 (0x23A)
-	null_func,//BIND_FUNC(sys_pad_ldd_unregister_controller) //571 (0x23B)
-	null_func,//BIND_FUNC(sys_pad_ldd_data_insert)          //572 (0x23C)
-	null_func,//BIND_FUNC(sys_pad_dbg_ldd_set_data_insert_mode) //573 (0x23D)
-	null_func,//BIND_FUNC(sys_pad_ldd_register_controller)  //574 (0x23E)
-	null_func,//BIND_FUNC(sys_pad_ldd_get_port_no)          //575 (0x23F)
+	BIND_FUNC(sys_pad_ldd_register_controller)  //570 (0x23A)
+	BIND_FUNC(sys_pad_ldd_unregister_controller) //571 (0x23B)
+	BIND_FUNC(sys_pad_ldd_data_insert)          //572 (0x23C)
+	BIND_FUNC(sys_pad_dbg_ldd_set_data_insert_mode) //573 (0x23D)
+	BIND_FUNC(sys_pad_ldd_register_controller)  //574 (0x23E)
+	BIND_FUNC(sys_pad_ldd_get_port_no)          //575 (0x23F)
 	uns_func,                                               //576 (0x240)  UNS
 	null_func,//BIND_FUNC(sys_pad_manager_...)              //577 (0x241)  ROOT  PM
 	null_func,//BIND_FUNC(sys_bluetooth_...)                //578 (0x242)
@@ -500,21 +500,21 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	null_func,//BIND_FUNC(sys_bluetooth_...)                //580 (0x244)  ROOT
 	null_func,//BIND_FUNC(sys_bluetooth_...)                //581 (0x245)  ROOT
 	null_func,//BIND_FUNC(sys_bluetooth_...)                //582 (0x246)  ROOT
-	null_func,//BIND_FUNC(sys_bt_read_firmware_version)     //583 (0x247)  ROOT
-	null_func,//BIND_FUNC(sys_bt_complete_wake_on_host)     //584 (0x248)  ROOT
-	null_func,//BIND_FUNC(sys_bt_disable_bluetooth)         //585 (0x249)
-	null_func,//BIND_FUNC(sys_bt_enable_bluetooth)          //586 (0x24A)
-	null_func,//BIND_FUNC(sys_bt_bccmd)                     //587 (0x24B)  ROOT
-	null_func,//BIND_FUNC(sys_bt_read_hq)                   //588 (0x24C)
-	null_func,//BIND_FUNC(sys_bt_hid_get_remote_status)     //589 (0x24D)
-	null_func,//BIND_FUNC(sys_bt_register_controller)       //590 (0x24E)  ROOT
-	null_func,//BIND_FUNC(sys_bt_clear_registered_contoller) //591 (0x24F)
-	null_func,//BIND_FUNC(sys_bt_connect_accept_controller) //592 (0x250)
-	null_func,//BIND_FUNC(sys_bt_get_local_bdaddress)       //593 (0x251)  ROOT
-	null_func,//BIND_FUNC(sys_bt_hid_get_data)              //594 (0x252)
-	null_func,//BIND_FUNC(sys_bt_hid_set_report)            //595 (0x253)
-	null_func,//BIND_FUNC(sys_bt_sched_log)                 //596 (0x254)
-	null_func,//BIND_FUNC(sys_bt_cancel_connect_accept_controller) //597 (0x255)
+	BIND_FUNC(sys_bt_read_firmware_version)     //583 (0x247)  ROOT
+	BIND_FUNC(sys_bt_complete_wake_on_host)     //584 (0x248)  ROOT
+	BIND_FUNC(sys_bt_disable_bluetooth)         //585 (0x249)
+	BIND_FUNC(sys_bt_enable_bluetooth)          //586 (0x24A)
+	BIND_FUNC(sys_bt_bccmd)                     //587 (0x24B)  ROOT
+	BIND_FUNC(sys_bt_read_hq)                   //588 (0x24C)
+	BIND_FUNC(sys_bt_hid_get_remote_status)     //589 (0x24D)
+	BIND_FUNC(sys_bt_register_controller)       //590 (0x24E)  ROOT
+	BIND_FUNC(sys_bt_clear_registered_contoller) //591 (0x24F)
+	BIND_FUNC(sys_bt_connect_accept_controller) //592 (0x250)
+	BIND_FUNC(sys_bt_get_local_bdaddress)       //593 (0x251)  ROOT
+	BIND_FUNC(sys_bt_hid_get_data)              //594 (0x252)
+	BIND_FUNC(sys_bt_hid_set_report)            //595 (0x253)
+	BIND_FUNC(sys_bt_sched_log)                 //596 (0x254)
+	BIND_FUNC(sys_bt_cancel_connect_accept_controller) //597 (0x255)
 	null_func,//BIND_FUNC(sys_bluetooth_...)                //598 (0x256)  ROOT
 	null_func,//BIND_FUNC(sys_bluetooth_...)                //599 (0x257)  ROOT
 	BIND_FUNC(sys_storage_open),                            //600 (0x258)  ROOT
@@ -549,35 +549,35 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	BIND_FUNC(sys_gpio_set),                                //630 (0x276)
 	BIND_FUNC(sys_gpio_get),                                //631 (0x277)
 	uns_func,                                               //632 (0x278)  UNS
-	null_func,//BIND_FUNC(sys_fsw_connect_event)            //633 (0x279)
-	null_func,//BIND_FUNC(sys_fsw_disconnect_event)         //634 (0x27A)
+	BIND_FUNC(sys_fsw_connect_event)            //633 (0x279)
+	BIND_FUNC(sys_fsw_disconnect_event)         //634 (0x27A)
 	BIND_FUNC(sys_btsetting_if),                            //635 (0x27B)
 	null_func,//BIND_FUNC(sys_...)                          //636 (0x27C)
 	null_func,//BIND_FUNC(sys_...)                          //637 (0x27D)
 	null_func,//BIND_FUNC(sys_...)                          //638 (0x27E)
 
 	null_func,//BIND_FUNC(sys...)                           //639  DEPRECATED
-	null_func,//BIND_FUNC(sys_usbbtaudio_initialize)        //640  DEPRECATED
-	null_func,//BIND_FUNC(sys_usbbtaudio_finalize)          //641  DEPRECATED
-	null_func,//BIND_FUNC(sys_usbbtaudio_discovery)         //642  DEPRECATED
-	null_func,//BIND_FUNC(sys_usbbtaudio_cancel_discovery)  //643  DEPRECATED
-	null_func,//BIND_FUNC(sys_usbbtaudio_pairing)           //644  DEPRECATED
-	null_func,//BIND_FUNC(sys_usbbtaudio_set_passkey)       //645  DEPRECATED
-	null_func,//BIND_FUNC(sys_usbbtaudio_connect)           //646  DEPRECATED
-	null_func,//BIND_FUNC(sys_usbbtaudio_disconnect)        //647  DEPRECATED
+	BIND_FUNC(sys_usbbtaudio_initialize)        //640  DEPRECATED
+	BIND_FUNC(sys_usbbtaudio_finalize)          //641  DEPRECATED
+	BIND_FUNC(sys_usbbtaudio_discovery)         //642  DEPRECATED
+	BIND_FUNC(sys_usbbtaudio_cancel_discovery)  //643  DEPRECATED
+	BIND_FUNC(sys_usbbtaudio_pairing)           //644  DEPRECATED
+	BIND_FUNC(sys_usbbtaudio_set_passkey)       //645  DEPRECATED
+	BIND_FUNC(sys_usbbtaudio_connect)           //646  DEPRECATED
+	BIND_FUNC(sys_usbbtaudio_disconnect)        //647  DEPRECATED
 	null_func,//BIND_FUNC(sys_...)                          //648  DEPRECATED
 	null_func,//BIND_FUNC(sys_...)                          //649  DEPRECATED
 
 	BIND_FUNC(sys_rsxaudio_initialize),                     //650 (0x28A)
-	null_func,//BIND_FUNC(sys_rsxaudio_finalize)            //651 (0x28B)
+	BIND_FUNC(sys_rsxaudio_finalize)            //651 (0x28B)
 	BIND_FUNC(sys_rsxaudio_import_shared_memory),           //652 (0x28C)
-	null_func,//BIND_FUNC(sys_rsxaudio_unimport_shared_memory) //653 (0x28D)
-	null_func,//BIND_FUNC(sys_rsxaudio_create_connection)   //654 (0x28E)
-	null_func,//BIND_FUNC(sys_rsxaudio_close_connection)    //655 (0x28F)
-	null_func,//BIND_FUNC(sys_rsxaudio_prepare_process)     //656 (0x290)
-	null_func,//BIND_FUNC(sys_rsxaudio_start_process)       //657 (0x291)
-	null_func,//BIND_FUNC(sys_rsxaudio_stop_process)        //658 (0x292)
-	null_func,//BIND_FUNC(sys_rsxaudio_)                    //659 (0x293)
+	BIND_FUNC(sys_rsxaudio_unimport_shared_memory) //653 (0x28D)
+	BIND_FUNC(sys_rsxaudio_create_connection)   //654 (0x28E)
+	BIND_FUNC(sys_rsxaudio_close_connection)    //655 (0x28F)
+	BIND_FUNC(sys_rsxaudio_prepare_process)     //656 (0x290)
+	BIND_FUNC(sys_rsxaudio_start_process)       //657 (0x291)
+	BIND_FUNC(sys_rsxaudio_stop_process)        //658 (0x292)
+	BIND_FUNC(sys_rsxaudio_)                    //659 (0x293)
 
 	uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, //660-665  UNS
 
@@ -612,8 +612,8 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	null_func,//BIND_FUNC(sys_...)                          //694 (0x2B6)  DEPRECATED
 	null_func,//BIND_FUNC(sys_...)                          //695 (0x2B7)  DEPRECATED
 	null_func,//BIND_FUNC(sys_...)                          //696 (0x2B8)  ROOT
-	uns_func,//BIND_FUNC(sys_...)                           //697 (0x2B9)  UNS
-	uns_func,//BIND_FUNC(sys_...)                           //698 (0x2BA)  UNS
+	null_func,//BIND_FUNC(sys_...)                           //697 (0x2B9)  UNS
+	null_func,//BIND_FUNC(sys_...)                           //698 (0x2BA)  UNS
 	BIND_FUNC(sys_bdemu_send_command),                      //699 (0x2BB)
 	BIND_FUNC(sys_net_bnet_accept),                         //700 (0x2BC)
 	BIND_FUNC(sys_net_bnet_bind),                           //701 (0x2BD)
@@ -688,15 +688,15 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	BIND_FUNC(sys_fs_symbolic_link),                        //833 (0x341)
 	BIND_FUNC(sys_fs_chmod),                                //834 (0x342)
 	BIND_FUNC(sys_fs_chown),                                //835 (0x343)
-	null_func,//BIND_FUNC(sys_fs_newfs),                    //836 (0x344)
+	BIND_FUNC(sys_fs_newfs),                    //836 (0x344)
 	BIND_FUNC(sys_fs_mount),                                //837 (0x345)
-	null_func,//BIND_FUNC(sys_fs_unmount),                  //838 (0x346)
-	null_func,//BIND_FUNC(sys_fs_sync),                     //839 (0x347)
+	BIND_FUNC(sys_fs_unmount),                  //838 (0x346)
+	BIND_FUNC(sys_fs_sync),                     //839 (0x347)
 	BIND_FUNC(sys_fs_disk_free),                            //840 (0x348)
 	BIND_FUNC(sys_fs_get_mount_info_size),                  //841 (0x349)
 	BIND_FUNC(sys_fs_get_mount_info),                       //842 (0x34A)
-	null_func,//BIND_FUNC(sys_fs_get_fs_info_size),         //843 (0x34B)
-	null_func,//BIND_FUNC(sys_fs_get_fs_info),              //844 (0x34C)
+	BIND_FUNC(sys_fs_get_fs_info_size),         //843 (0x34B)
+	BIND_FUNC(sys_fs_get_fs_info),              //844 (0x34C)
 	BIND_FUNC(sys_fs_mapped_allocate),                      //845 (0x34D)
 	BIND_FUNC(sys_fs_mapped_free),                          //846 (0x34E)
 	BIND_FUNC(sys_fs_truncate2),                            //847 (0x34F)
@@ -704,130 +704,130 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, //848-853  UNS
 	uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, //854-859  UNS
 
-	null_func,//BIND_FUNC(syscall_sys_ss_get_cache_of_analog_sunset_flag), //860 (0x35C)  AUTHID
-	null_func,//BIND_FUNC(sys_ss_protected_file_db)         //861  ROOT
+	BIND_FUNC(syscall_sys_ss_get_cache_of_analog_sunset_flag), //860 (0x35C)  AUTHID
+	BIND_FUNC(sys_ss_protected_file_db)         //861  ROOT
 	BIND_FUNC(sys_ss_virtual_trm_manager),                  //862  ROOT
 	BIND_FUNC(sys_ss_update_manager),                       //863  ROOT
-	null_func,//BIND_FUNC(sys_ss_sec_hw_framework)          //864  DBG
+	BIND_FUNC(sys_ss_sec_hw_framework)          //864  DBG
 	BIND_FUNC(sys_ss_random_number_generator),              //865 (0x361)
 	BIND_FUNC(sys_ss_secure_rtc),                           //866  ROOT
 	BIND_FUNC(sys_ss_appliance_info_manager),               //867  ROOT
-	null_func,//BIND_FUNC(sys_ss_individual_info_manager)   //868  ROOT / DBG  AUTHID
-	null_func,//BIND_FUNC(sys_ss_factory_data_manager)      //869  ROOT
+	BIND_FUNC(sys_ss_individual_info_manager)   //868  ROOT / DBG  AUTHID
+	BIND_FUNC(sys_ss_factory_data_manager)      //869  ROOT
 	BIND_FUNC(sys_ss_get_console_id),                       //870 (0x366)
-	null_func,//BIND_FUNC(sys_ss_access_control_engine),    //871 (0x367)  DBG
+	BIND_FUNC(sys_ss_access_control_engine),    //871 (0x367)  DBG
 	BIND_FUNC(sys_ss_get_open_psid),                        //872 (0x368)
 	BIND_FUNC(sys_ss_get_cache_of_product_mode),            //873 (0x369)
 	BIND_FUNC(sys_ss_get_cache_of_flash_ext_flag),          //874 (0x36A)
 	BIND_FUNC(sys_ss_get_boot_device),                      //875 (0x36B)
-	null_func,//BIND_FUNC(sys_ss_disc_access_control)       //876 (0x36C)
-	null_func,//BIND_FUNC(sys_ss_~utoken_if)                //877 (0x36D)  ROOT
-	null_func,//BIND_FUNC(sys_ss_ad_sign)                   //878 (0x36E)
-	null_func,//BIND_FUNC(sys_ss_media_id)                  //879 (0x36F)
-	null_func,//BIND_FUNC(sys_deci3_open)                   //880 (0x370)
-	null_func,//BIND_FUNC(sys_deci3_create_event_path)      //881 (0x371)
-	null_func,//BIND_FUNC(sys_deci3_close)                  //882 (0x372)
-	null_func,//BIND_FUNC(sys_deci3_send)                   //883 (0x373)
-	null_func,//BIND_FUNC(sys_deci3_receive)                //884 (0x374)
-	null_func,//BIND_FUNC(sys_deci3_open2)                  //885 (0x375)
+	BIND_FUNC(sys_ss_disc_access_control)       //876 (0x36C)
+	BIND_FUNC(sys_ss_~utoken_if)                //877 (0x36D)  ROOT
+	BIND_FUNC(sys_ss_ad_sign)                   //878 (0x36E)
+	BIND_FUNC(sys_ss_media_id)                  //879 (0x36F)
+	BIND_FUNC(sys_deci3_open)                   //880 (0x370)
+	BIND_FUNC(sys_deci3_create_event_path)      //881 (0x371)
+	BIND_FUNC(sys_deci3_close)                  //882 (0x372)
+	BIND_FUNC(sys_deci3_send)                   //883 (0x373)
+	BIND_FUNC(sys_deci3_receive)                //884 (0x374)
+	BIND_FUNC(sys_deci3_open2)                  //885 (0x375)
 	uns_func, uns_func, uns_func,                           //886-888  UNS
 	null_func,//BIND_FUNC(sys_...)                          //889 (0x379)  ROOT
-	null_func,//BIND_FUNC(sys_deci3_initialize)             //890 (0x37A)
-	null_func,//BIND_FUNC(sys_deci3_terminate)              //891 (0x37B)
-	null_func,//BIND_FUNC(sys_deci3_debug_mode)             //892 (0x37C)
-	null_func,//BIND_FUNC(sys_deci3_show_status)            //893 (0x37D)
-	null_func,//BIND_FUNC(sys_deci3_echo_test)              //894 (0x37E)
-	null_func,//BIND_FUNC(sys_deci3_send_dcmp_packet)       //895 (0x37F)
-	null_func,//BIND_FUNC(sys_deci3_dump_cp_register)	    //896 (0x380)
-	null_func,//BIND_FUNC(sys_deci3_dump_cp_buffer)         //897 (0x381)
+	BIND_FUNC(sys_deci3_initialize)             //890 (0x37A)
+	BIND_FUNC(sys_deci3_terminate)              //891 (0x37B)
+	BIND_FUNC(sys_deci3_debug_mode)             //892 (0x37C)
+	BIND_FUNC(sys_deci3_show_status)            //893 (0x37D)
+	BIND_FUNC(sys_deci3_echo_test)              //894 (0x37E)
+	BIND_FUNC(sys_deci3_send_dcmp_packet)       //895 (0x37F)
+	BIND_FUNC(sys_deci3_dump_cp_register)	    //896 (0x380)
+	BIND_FUNC(sys_deci3_dump_cp_buffer)         //897 (0x381)
 	uns_func,                                               //898 (0x382)  UNS
-	null_func,//BIND_FUNC(sys_deci3_test)                   //899 (0x383)
-	null_func,//BIND_FUNC(sys_dbg_stop_processes)           //900 (0x384)
-	null_func,//BIND_FUNC(sys_dbg_continue_processes)       //901 (0x385)
-	null_func,//BIND_FUNC(sys_dbg_stop_threads)             //902 (0x386)
-	null_func,//BIND_FUNC(sys_dbg_continue_threads)         //903 (0x387)
+	BIND_FUNC(sys_deci3_test)                   //899 (0x383)
+	BIND_FUNC(sys_dbg_stop_processes)           //900 (0x384)
+	BIND_FUNC(sys_dbg_continue_processes)       //901 (0x385)
+	BIND_FUNC(sys_dbg_stop_threads)             //902 (0x386)
+	BIND_FUNC(sys_dbg_continue_threads)         //903 (0x387)
 	BIND_FUNC(sys_dbg_read_process_memory),					//904 (0x388)
 	BIND_FUNC(sys_dbg_write_process_memory),				//905 (0x389)
-	null_func,//BIND_FUNC(sys_dbg_read_thread_register)     //906 (0x38A)
-	null_func,//BIND_FUNC(sys_dbg_write_thread_register)    //907 (0x38B)
-	null_func,//BIND_FUNC(sys_dbg_get_process_list)         //908 (0x38C)
-	null_func,//BIND_FUNC(sys_dbg_get_thread_list)          //909 (0x38D)
-	null_func,//BIND_FUNC(sys_dbg_get_thread_info)          //910 (0x38E)
-	null_func,//BIND_FUNC(sys_dbg_spu_thread_read_from_ls)  //911 (0x38F)
-	null_func,//BIND_FUNC(sys_dbg_spu_thread_write_to_ls)   //912 (0x390)
-	null_func,//BIND_FUNC(sys_dbg_kill_process)             //913 (0x391)
-	null_func,//BIND_FUNC(sys_dbg_get_process_info)         //914 (0x392)
-	null_func,//BIND_FUNC(sys_dbg_set_run_control_bit_to_spu) //915 (0x393)
-	null_func,//BIND_FUNC(sys_dbg_spu_thread_get_exception_cause) //916 (0x394)
-	null_func,//BIND_FUNC(sys_dbg_create_kernel_event_queue) //917 (0x395)
-	null_func,//BIND_FUNC(sys_dbg_read_kernel_event_queue)   //918 (0x396)
-	null_func,//BIND_FUNC(sys_dbg_destroy_kernel_event_queue) //919 (0x397)
-	null_func,//BIND_FUNC(sys_dbg_get_process_event_ctrl_flag) //920 (0x398)
-	null_func,//BIND_FUNC(sys_dbg_set_process_event_cntl_flag) //921 (0x399)
-	null_func,//BIND_FUNC(sys_dbg_get_spu_thread_group_event_cntl_flag) //922 (0x39A)
-	null_func,//BIND_FUNC(sys_dbg_set_spu_thread_group_event_cntl_flag) //923 (0x39B)
-	null_func,//BIND_FUNC(sys_dbg_get_module_list)          //924 (0x39C)
-	null_func,//BIND_FUNC(sys_dbg_get_raw_spu_list)         //925 (0x39D)
-	null_func,//BIND_FUNC(sys_dbg_initialize_scratch_executable_area) //926 (0x39E)
-	null_func,//BIND_FUNC(sys_dbg_terminate_scratch_executable_area) //927 (0x3A0)
-	null_func,//BIND_FUNC(sys_dbg_initialize_scratch_data_area) //928 (0x3A1)
-	null_func,//BIND_FUNC(sys_dbg_terminate_scratch_data_area) //929 (0x3A2)
-	null_func,//BIND_FUNC(sys_dbg_get_user_memory_stat)     //930 (0x3A3)
-	null_func,//BIND_FUNC(sys_dbg_get_shared_memory_attribute_list) //931 (0x3A4)
-	null_func,//BIND_FUNC(sys_dbg_get_mutex_list)           //932 (0x3A4)
-	null_func,//BIND_FUNC(sys_dbg_get_mutex_information)    //933 (0x3A5)
-	null_func,//BIND_FUNC(sys_dbg_get_cond_list)            //934 (0x3A6)
-	null_func,//BIND_FUNC(sys_dbg_get_cond_information)     //935 (0x3A7)
-	null_func,//BIND_FUNC(sys_dbg_get_rwlock_list)          //936 (0x3A8)
-	null_func,//BIND_FUNC(sys_dbg_get_rwlock_information)   //937 (0x3A9)
-	null_func,//BIND_FUNC(sys_dbg_get_lwmutex_list)         //938 (0x3AA)
-	null_func,//BIND_FUNC(sys_dbg_get_address_from_dabr)    //939 (0x3AB)
-	null_func,//BIND_FUNC(sys_dbg_set_address_to_dabr)      //940 (0x3AC)
-	null_func,//BIND_FUNC(sys_dbg_get_lwmutex_information)  //941 (0x3AD)
-	null_func,//BIND_FUNC(sys_dbg_get_event_queue_list)     //942 (0x3AE)
-	null_func,//BIND_FUNC(sys_dbg_get_event_queue_information) //943 (0x3AF)
-	null_func,//BIND_FUNC(sys_dbg_initialize_ppu_exception_handler) //944 (0x3B0)
-	null_func,//BIND_FUNC(sys_dbg_finalize_ppu_exception_handler) //945 (0x3B1)  DBG
-	null_func,//BIND_FUNC(sys_dbg_get_semaphore_list)       //946 (0x3B2)
-	null_func,//BIND_FUNC(sys_dbg_get_semaphore_information) //947 (0x3B3)
-	null_func,//BIND_FUNC(sys_dbg_get_kernel_thread_list)   //948 (0x3B4)
-	null_func,//BIND_FUNC(sys_dbg_get_kernel_thread_info)   //949 (0x3B5)
-	null_func,//BIND_FUNC(sys_dbg_get_lwcond_list)          //950 (0x3B6)
-	null_func,//BIND_FUNC(sys_dbg_get_lwcond_information)   //951 (0x3B7)
-	null_func,//BIND_FUNC(sys_dbg_create_scratch_data_area_ext) //952 (0x3B8)
-	null_func,//BIND_FUNC(sys_dbg_vm_get_page_information)  //953 (0x3B9)
-	null_func,//BIND_FUNC(sys_dbg_vm_get_info)              //954 (0x3BA)
-	null_func,//BIND_FUNC(sys_dbg_enable_floating_point_enabled_exception) //955 (0x3BB)
-	null_func,//BIND_FUNC(sys_dbg_disable_floating_point_enabled_exception) //956 (0x3BC)
-	null_func,//BIND_FUNC(sys_dbg_get_process_memory_container_information) //957 (0x3BD)
+	BIND_FUNC(sys_dbg_read_thread_register)     //906 (0x38A)
+	BIND_FUNC(sys_dbg_write_thread_register)    //907 (0x38B)
+	BIND_FUNC(sys_dbg_get_process_list)         //908 (0x38C)
+	BIND_FUNC(sys_dbg_get_thread_list)          //909 (0x38D)
+	BIND_FUNC(sys_dbg_get_thread_info)          //910 (0x38E)
+	BIND_FUNC(sys_dbg_spu_thread_read_from_ls)  //911 (0x38F)
+	BIND_FUNC(sys_dbg_spu_thread_write_to_ls)   //912 (0x390)
+	BIND_FUNC(sys_dbg_kill_process)             //913 (0x391)
+	BIND_FUNC(sys_dbg_get_process_info)         //914 (0x392)
+	BIND_FUNC(sys_dbg_set_run_control_bit_to_spu) //915 (0x393)
+	BIND_FUNC(sys_dbg_spu_thread_get_exception_cause) //916 (0x394)
+	BIND_FUNC(sys_dbg_create_kernel_event_queue) //917 (0x395)
+	BIND_FUNC(sys_dbg_read_kernel_event_queue)   //918 (0x396)
+	BIND_FUNC(sys_dbg_destroy_kernel_event_queue) //919 (0x397)
+	BIND_FUNC(sys_dbg_get_process_event_ctrl_flag) //920 (0x398)
+	BIND_FUNC(sys_dbg_set_process_event_cntl_flag) //921 (0x399)
+	BIND_FUNC(sys_dbg_get_spu_thread_group_event_cntl_flag) //922 (0x39A)
+	BIND_FUNC(sys_dbg_set_spu_thread_group_event_cntl_flag) //923 (0x39B)
+	BIND_FUNC(sys_dbg_get_module_list)          //924 (0x39C)
+	BIND_FUNC(sys_dbg_get_raw_spu_list)         //925 (0x39D)
+	BIND_FUNC(sys_dbg_initialize_scratch_executable_area) //926 (0x39E)
+	BIND_FUNC(sys_dbg_terminate_scratch_executable_area) //927 (0x3A0)
+	BIND_FUNC(sys_dbg_initialize_scratch_data_area) //928 (0x3A1)
+	BIND_FUNC(sys_dbg_terminate_scratch_data_area) //929 (0x3A2)
+	BIND_FUNC(sys_dbg_get_user_memory_stat)     //930 (0x3A3)
+	BIND_FUNC(sys_dbg_get_shared_memory_attribute_list) //931 (0x3A4)
+	BIND_FUNC(sys_dbg_get_mutex_list)           //932 (0x3A4)
+	BIND_FUNC(sys_dbg_get_mutex_information)    //933 (0x3A5)
+	BIND_FUNC(sys_dbg_get_cond_list)            //934 (0x3A6)
+	BIND_FUNC(sys_dbg_get_cond_information)     //935 (0x3A7)
+	BIND_FUNC(sys_dbg_get_rwlock_list)          //936 (0x3A8)
+	BIND_FUNC(sys_dbg_get_rwlock_information)   //937 (0x3A9)
+	BIND_FUNC(sys_dbg_get_lwmutex_list)         //938 (0x3AA)
+	BIND_FUNC(sys_dbg_get_address_from_dabr)    //939 (0x3AB)
+	BIND_FUNC(sys_dbg_set_address_to_dabr)      //940 (0x3AC)
+	BIND_FUNC(sys_dbg_get_lwmutex_information)  //941 (0x3AD)
+	BIND_FUNC(sys_dbg_get_event_queue_list)     //942 (0x3AE)
+	BIND_FUNC(sys_dbg_get_event_queue_information) //943 (0x3AF)
+	BIND_FUNC(sys_dbg_initialize_ppu_exception_handler) //944 (0x3B0)
+	BIND_FUNC(sys_dbg_finalize_ppu_exception_handler) //945 (0x3B1)  DBG
+	BIND_FUNC(sys_dbg_get_semaphore_list)       //946 (0x3B2)
+	BIND_FUNC(sys_dbg_get_semaphore_information) //947 (0x3B3)
+	BIND_FUNC(sys_dbg_get_kernel_thread_list)   //948 (0x3B4)
+	BIND_FUNC(sys_dbg_get_kernel_thread_info)   //949 (0x3B5)
+	BIND_FUNC(sys_dbg_get_lwcond_list)          //950 (0x3B6)
+	BIND_FUNC(sys_dbg_get_lwcond_information)   //951 (0x3B7)
+	BIND_FUNC(sys_dbg_create_scratch_data_area_ext) //952 (0x3B8)
+	BIND_FUNC(sys_dbg_vm_get_page_information)  //953 (0x3B9)
+	BIND_FUNC(sys_dbg_vm_get_info)              //954 (0x3BA)
+	BIND_FUNC(sys_dbg_enable_floating_point_enabled_exception) //955 (0x3BB)
+	BIND_FUNC(sys_dbg_disable_floating_point_enabled_exception) //956 (0x3BC)
+	BIND_FUNC(sys_dbg_get_process_memory_container_information) //957 (0x3BD)
 	uns_func,                                               //958 (0x3BE)  UNS
 	null_func,//BIND_FUNC(sys_dbg_...)                      //959 (0x3BF)
-	null_func,//BIND_FUNC(sys_control_performance_monitor)  //960 (0x3C0)
-	null_func,//BIND_FUNC(sys_performance_monitor_hidden)   //961 (0x3C1)
-	null_func,//BIND_FUNC(sys_performance_monitor_bookmark) //962 (0x3C2)
-	null_func,//BIND_FUNC(sys_lv1_pc_trace_create)          //963 (0x3C3)
-	null_func,//BIND_FUNC(sys_lv1_pc_trace_start)           //964 (0x3C4)
-	null_func,//BIND_FUNC(sys_lv1_pc_trace_stop)            //965 (0x3C5)
-	null_func,//BIND_FUNC(sys_lv1_pc_trace_get_status)      //966 (0x3C6)
-	null_func,//BIND_FUNC(sys_lv1_pc_trace_destroy)         //967 (0x3C7)
-	null_func,//BIND_FUNC(sys_rsx_trace_ioctl)              //968 (0x3C8)
+	BIND_FUNC(sys_control_performance_monitor)  //960 (0x3C0)
+	BIND_FUNC(sys_performance_monitor_hidden)   //961 (0x3C1)
+	BIND_FUNC(sys_performance_monitor_bookmark) //962 (0x3C2)
+	BIND_FUNC(sys_lv1_pc_trace_create)          //963 (0x3C3)
+	BIND_FUNC(sys_lv1_pc_trace_start)           //964 (0x3C4)
+	BIND_FUNC(sys_lv1_pc_trace_stop)            //965 (0x3C5)
+	BIND_FUNC(sys_lv1_pc_trace_get_status)      //966 (0x3C6)
+	BIND_FUNC(sys_lv1_pc_trace_destroy)         //967 (0x3C7)
+	BIND_FUNC(sys_rsx_trace_ioctl)              //968 (0x3C8)
 	null_func,//BIND_FUNC(sys_dbg_...)                      //969 (0x3C9)
-	null_func,//BIND_FUNC(sys_dbg_get_event_flag_list)      //970 (0x3CA)
-	null_func,//BIND_FUNC(sys_dbg_get_event_flag_information) //971 (0x3CB)
+	BIND_FUNC(sys_dbg_get_event_flag_list)      //970 (0x3CA)
+	BIND_FUNC(sys_dbg_get_event_flag_information) //971 (0x3CB)
 	null_func,//BIND_FUNC(sys_dbg_...)                      //972 (0x3CC)
-	uns_func,//BIND_FUNC(sys_dbg_...)                       //973 (0x3CD)
+	null_func,//BIND_FUNC(sys_dbg_...)                       //973 (0x3CD)
 	null_func,//BIND_FUNC(sys_dbg_...)                      //974 (0x3CE)
-	null_func,//BIND_FUNC(sys_dbg_read_spu_thread_context2) //975 (0x3CF)
-	null_func,//BIND_FUNC(sys_crypto_engine_create)         //976 (0x3D0)
-	null_func,//BIND_FUNC(sys_crypto_engine_destroy)        //977 (0x3D1)
-	null_func,//BIND_FUNC(sys_crypto_engine_hasher_prepare) //978 (0x3D2)  ROOT
-	null_func,//BIND_FUNC(sys_crypto_engine_hasher_run)     //979 (0x3D3)
-	null_func,//BIND_FUNC(sys_crypto_engine_hasher_get_hash) //980 (0x3D4)
-	null_func,//BIND_FUNC(sys_crypto_engine_cipher_prepare) //981 (0x3D5)  ROOT
-	null_func,//BIND_FUNC(sys_crypto_engine_cipher_run)     //982 (0x3D6)
-	null_func,//BIND_FUNC(sys_crypto_engine_cipher_get_hash) //983 (0x3D7)
-	null_func,//BIND_FUNC(sys_crypto_engine_random_generate) //984 (0x3D8)
-	null_func,//BIND_FUNC(sys_dbg_get_console_type)         //985 (0x3D9)  ROOT
+	BIND_FUNC(sys_dbg_read_spu_thread_context2) //975 (0x3CF)
+	BIND_FUNC(sys_crypto_engine_create)         //976 (0x3D0)
+	BIND_FUNC(sys_crypto_engine_destroy)        //977 (0x3D1)
+	BIND_FUNC(sys_crypto_engine_hasher_prepare) //978 (0x3D2)  ROOT
+	BIND_FUNC(sys_crypto_engine_hasher_run)     //979 (0x3D3)
+	BIND_FUNC(sys_crypto_engine_hasher_get_hash) //980 (0x3D4)
+	BIND_FUNC(sys_crypto_engine_cipher_prepare) //981 (0x3D5)  ROOT
+	BIND_FUNC(sys_crypto_engine_cipher_run)     //982 (0x3D6)
+	BIND_FUNC(sys_crypto_engine_cipher_get_hash) //983 (0x3D7)
+	BIND_FUNC(sys_crypto_engine_random_generate) //984 (0x3D8)
+	BIND_FUNC(sys_dbg_get_console_type)         //985 (0x3D9)  ROOT
 	null_func,//BIND_FUNC(sys_dbg_...)                      //986 (0x3DA)  ROOT  DBG
 	null_func,//BIND_FUNC(sys_dbg_...)                      //987 (0x3DB)  ROOT
 	null_func,//BIND_FUNC(sys_dbg_..._ppu_exception_handler) //988 (0x3DC)
@@ -839,21 +839,38 @@ syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS] =
 	uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, uns_func, //1020-1023  UNS*/
 };
 
-
+syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS];
+char syscall_numeric_names[MAX_NUM_OF_SYSTEM_CALLS][7];
 
 void init_syscall_info(void) {
 	// Initialize syscall info at runtime */
 	for(uint16_t i = 0; i < MAX_NUM_OF_SYSTEM_CALLS; i++) {
 		syscall_info_t *info = &(syscall_info[i]);
 
+		// Basic information
 		info->num = i;
 		info->nargs = 8;
-		if(info->name[0] == '\0') sprintf(info->name, "syscall_%u", i);
+
+		// Name
+		sprintf(syscall_numeric_names[i], "sc%hu", i);
+		if(syscall_names[i][0] != '\0')
+			info->name = syscall_names[i];
+		else
+			info->name = syscall_numeric_names[i];
+
+		// Callback
 		info->cb = (sci_callback*)NULL;
 
-		for(uint16_t j = 0; j < SCI_ARGS_MAX; i++) {
-			sprintf(info->args[j].fmt, "arg%u=%%lx", j);
-		}
+		// Arguments
+		#define ARG_FMT(x) info->arg_fmt[x] = "arg#x=%lx"
+		ARG_FMT(0);
+		ARG_FMT(1);
+		ARG_FMT(2);
+		ARG_FMT(3);
+		ARG_FMT(4);
+		ARG_FMT(5);
+		ARG_FMT(6);
+		ARG_FMT(7);
 	}
 
 	// Specific syscalls (TODO: Move interesting ones to separate files)
