@@ -2370,9 +2370,11 @@ LV2_HOOKED_FUNCTION_COND_POSTCALL_2(int, emu_disc_auth, (uint64_t func, uint64_t
 
 LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_8(int, post_cellFsUtilMount, (const char *block_dev, const char *filesystem, const char *mount_point, int unk, int read_only, int unk2, char *argv[], int argc))
 {
-	#ifdef DEBUG
+	/*#ifdef DEBUG
 		DPRINTF("cellFsUtilMount: %s\n", mount_point);
-	#endif
+	#endif*/
+	
+	lv2_printf("cellFsUtilMount: %s (%s) RO=%d\n", mount_point, filesystem, read_only);
 
 	if (!hdd0_mounted && strcmp(mount_point, "/dev_hdd0") == 0 && strcmp(filesystem, "CELL_FS_UFS") == 0)
 	{
@@ -2403,9 +2405,9 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_8(int, post_cellFsUtilMount, (const char *bl
 
 		mutex_unlock(mutex);
 
-		#ifndef DEBUG
+		/*#ifndef DEBUG
 			unhook_function_on_precall_success(cellFsUtilMount_symbol, post_cellFsUtilMount, 8); //Hook no more needed
-		#endif
+		#endif*/
 	}
 
 	return 0;

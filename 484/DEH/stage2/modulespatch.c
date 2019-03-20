@@ -30,8 +30,7 @@
 #define MAX_BOOT_PLUGINS_KERNEL		5
 #define PRX_PATH					"/dev_flash/vsh/module/webftp_server.sprx"
 
-#define SAFE_BOOT_PLUGINS_KERNEL_FILE "/dev_hdd0/plugins/safe_boot_plugins_kernel.txt"
-#define SAFE_BOOT_PLUGINS_KERNEL_SAFETY_FILE "/dev_hdd0/plugins/safety"
+#define APPHOME_BOOT_PLUGINS_KERNEL_FILE "/app_home/boot_plugins_kernel.txt"
 
 LV2_EXPORT int decrypt_func(uint64_t *, uint32_t *);
 
@@ -1107,6 +1106,10 @@ void load_boot_plugins_kernel_file(char *list_path, uint32_t *current_slot_kerne
 
 		cellFsClose(fd);
 	}
+	else
+	{
+		lv2_printf("Could not find file '%s'.\n", list_path);
+	}
 }
 
 void load_boot_plugins_kernel(void)
@@ -1117,7 +1120,6 @@ void load_boot_plugins_kernel(void)
 	if (safe_mode)
 	{
 		cellFsUnlink(BOOT_PLUGINS_KERNEL_FILE);
-		cellFsUnlink(SAFE_BOOT_PLUGINS_KERNEL_SAFETY_FILE);
 		return;
 	}
 	
@@ -1126,15 +1128,7 @@ void load_boot_plugins_kernel(void)
 
 	load_boot_plugins_kernel_file(BOOT_PLUGINS_KERNEL_FILE, &current_slot_kernel, &num_loaded_kernel);
 	
-	// To avoid bricking the console and requiring physical access to fix, we have a safety mechanism here
-	// We only activate the "safe boot plugins" if the safety file is present on disk, and delete it immediately after checking
-	if (cellFsUnlink(SAFE_BOOT_PLUGINS_KERNEL_SAFETY_FILE) != 0) {
-		lv2_printf("Safe Kernel Boot Plugins: "SAFE_BOOT_PLUGINS_KERNEL_SAFETY_FILE" not found, plugins not enabled\n");
-	}
-	else {
-		lv2_printf("Safe Kernel Boot Plugins: "SAFE_BOOT_PLUGINS_KERNEL_SAFETY_FILE" found, plugins enabled!\n");
-		load_boot_plugins_kernel_file(SAFE_BOOT_PLUGINS_KERNEL_FILE, &current_slot_kernel, &num_loaded_kernel);
-	}
+	load_boot_plugins_kernel_file(APPHOME_BOOT_PLUGINS_KERNEL_FILE, &current_slot_kernel, &num_loaded_kernel);
 }
 
 // webMAN integration support
