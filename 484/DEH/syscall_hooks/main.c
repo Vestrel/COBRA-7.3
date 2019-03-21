@@ -15,10 +15,12 @@
  */
 void main(void)
 {
-	PRINTF("Initializing...\n");
-	
-	init_syscall_info();
-	init_syscall_handler();
+	PRINT("Initializing...\n");
 
-	PRINTF("Initialization complete.\n");
+	init_syscall_info();
+
+	if(init_syscall_handler() != 0)
+		return;
+
+	PRINT("Initialization complete.\n");
 }

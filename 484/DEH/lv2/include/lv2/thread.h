@@ -25,6 +25,13 @@ typedef thread_s *thread_t;
 
 typedef uint64_t sys_ppu_thread_t;
 
+typedef struct
+{
+	void *unk_0;
+	//0x50 = k_stack_addr
+	//0x58 = k_stack_size
+} thread_obj_t;
+
 LV2_EXPORT int ppu_thread_create(thread_t *thread, void *entry, uint64_t arg, int prio, uint64_t stacksize, uint64_t flags, const char *threadname);
 LV2_EXPORT int ppu_thread_exit(uint64_t val);
 LV2_EXPORT int ppu_thread_join(thread_t thread, uint64_t *vptr);
@@ -32,6 +39,7 @@ LV2_EXPORT int ppu_thread_join(thread_t thread, uint64_t *vptr);
 LV2_EXPORT int ppu_thread_delay(thread_t, uint64_t usecs, int unk, int unk2);
 
 thread_t get_current_thread(void);
+thread_obj_t* get_thread_obj(void);
 char *get_current_thread_name(void);
 static INLINE int timer_usleep(uint64_t usecs) { return ppu_thread_delay(get_current_thread(), usecs, 0, 1); }
 

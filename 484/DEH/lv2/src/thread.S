@@ -31,4 +31,10 @@ get_current_thread_name:
 	blr
 	
 
+.global get_thread_obj
+get_thread_obj:
 
+	mfsprg0 %r9
+	ld %r3, 0x68(%r9)
+	ld %r3, 0(%r3)
+	blr

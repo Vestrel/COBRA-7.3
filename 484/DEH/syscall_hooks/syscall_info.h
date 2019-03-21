@@ -10,8 +10,6 @@ struct syscall_info_t;
  * Syscall Info structure
  */
 #define SCI_ARGS_MAX 8
-#define SCI_NAME_MAX 128
-#define SCI_ARG_FMT_MAX 32
 
 /* Types */
 
@@ -22,6 +20,9 @@ typedef int (sci_callback)(struct syscall_t *sc);
 typedef struct syscall_info_t {
 	uint16_t num;
 	uint8_t nargs;
+
+	uint8_t trace; // Whether to trace this syscall
+	
 	char *name;
 
 	sci_callback *cb; // Callback for custom dumping
@@ -29,11 +30,12 @@ typedef struct syscall_info_t {
 	char* arg_fmt[SCI_ARGS_MAX]; // Information about the various parameters
 } syscall_info_t;
 
-extern syscall_info_t syscall_info[MAX_NUM_OF_SYSTEM_CALLS];
+extern syscall_info_t *syscall_info;
 
 
 /* Methods */
 extern void init_syscall_info(void);
+extern syscall_info_t* get_syscall_info(uint16_t num);
 
 #include "syscall_handler.h"
 
