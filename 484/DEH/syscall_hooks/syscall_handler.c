@@ -8,37 +8,9 @@
 #include <lv2/memory.h>
 
 #include "syscall_handler.h"
+#include "syscall_writer.h"
 #include "utilities.h"
 
-#define OUTPUT_FILE "/dev_hdd0/plugins/syscall.log"
-
-/*
- * Variables
- */
-int sch_output_fd;
-
-#define SCH_BUF_LEN KB(4)
-char *sch_buf;
-
-
-
-/*
- * File Handling
- */
-void sc_log(char *buf, uint64_t size)
-{
-	if(!sch_output_fd)
-		return;
-
-	int err = cellFsWrite(sch_output_fd, buf, size, NULL);
-
-	if(err) {
-		ERROR("sc_log cellFsWrite failed (err=%x)! Stopping syscall logging.", err);
-		cellFsClose(sch_output_fd);
-		sch_output_fd = 0;
-	}
-	//lv2_printf(buf);
-}
 
 /*
  * Default printer
@@ -47,36 +19,48 @@ void default_syscall_printer(syscall_t *sc)
 {
 	syscall_info_t *info = sc->info;
 
-	if(!sch_output_fd || !info->trace)
+	if(!info->trace)
 		return;
 
-	// Init
-	//mutex_lock(sch_mutex, 0);
-
+	// Prepare variables
 	char *nm     = info->name;
 	char *proc   = sc->proc;
 	//uint64_t thr = 0;//(uint64_t)sc->thr;
 	uint64_t res = sc->res;
 
-	#define SC_PRINTF(fmt, ...) SC_SNPRINTF(sch_buf, SCH_BUF_LEN, fmt, ##__VA_ARGS__ )
+	// Grab buffer
+	char *scb = (char*)malloc(SC_POOL_BUF_LEN);
+	if(scb == NULL) {
+		ERROR("Failed to allocate char*scb");
+		return;
+	}
+	int len = 0;
+
+	#define WRITE(fmt, ...) { \
+		int remaining = SC_POOL_BUF_LEN - len - 1; \
+		if(remaining > 0) { \
+			char *cur = scb + len; \
+			len += snprintf(cur, remaining+1, fmt, ## __VA_ARGS__ ); \
+		} \
+	} while(0)
 
 	// Print
-	SC_PRINTF("%s %s(", proc, nm);
+	WRITE("%s %s(", proc, nm);
+	
+	free(scb);
 
-	uint16_t nargs = info->nargs;
+	/*uint16_t nargs = info->nargs;
 	for(uint16_t i = 0; i < nargs; i++) {
 		if(i > 0)
-			sc_log(", ", 2);
+			WRITE(", ");
 
-		SC_PRINTF(info->arg_fmt[i], sc->args[i]);
+		WRITE(info->arg_fmt[i], sc->args[i]);
 	}
 
-	SC_PRINTF(") -> %lx\n", res);
+	WRITE(") -> %lx\n", res);*/
 
-	// Finish
-	//mutex_unlock(sch_mutex);
+	// send
 }
-
 
 
 /*
@@ -94,7 +78,7 @@ static void on_syscall(syscall_t *sc)
 
 	sc->info = get_syscall_info(sc->num);
 
-	//SC_NPRINTF(64, "sc %lx\n", sc->num);
+	SC_PRINTF(64, "sc %lx\n", sc->num);
 
 	// Trigger callback (if exists)
 	//sci_callback *cb = sc->info->cb;
@@ -102,7 +86,7 @@ static void on_syscall(syscall_t *sc)
 	//	return;
 
 	// Default printer
-	default_syscall_printer(sc);
+	//default_syscall_printer(sc);
 }
 
 
@@ -125,20 +109,20 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 
 	uint64_t (* syscall)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t) = (void *)&func;
 	
-	thread_obj_t *tobj = get_thread_obj();
-	uint64_t flag2 = *(uint64_t*)((void*)tobj + 0x94);
+	//thread_obj_t *tobj = get_thread_obj();
+	//uint64_t flag2 = *(uint64_t*)((void*)tobj + 0x94);
 
 	// Call original syscall and store result
 	uint64_t res = syscall(r3, r4, r5, r6, r7, r8, r9, r10);
 	
-	uint64_t newflag2 = *(uint64_t*)((void*)tobj + 0x94);
+	//uint64_t flag2 = *(uint64_t*)((void*)tobj + 0x94);
 	
-	if(flag2 == newflag2)
+	/*if(!(flag2 & ((1ul << 63) >> 25)))
 		extend_kstack(0);
 	else
 	{
-		INFO("flag2= %lx vs %lx", flag2, newflag2);
-	}
+		//INFO("flag2= %lx vs %lx", flag2, newflag2);
+	}*/
 
 	// Simple filter for most spammy syscalls
 	if ( 
@@ -210,29 +194,6 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
  */
 int init_syscall_handler(void)
 {
-	// Open log file
-	sch_output_fd = 0;
-	int err = cellFsOpen(OUTPUT_FILE, CELL_FS_O_WRONLY | CELL_FS_O_CREAT | CELL_FS_O_TRUNC, &sch_output_fd, 0666, NULL, 0);
-	if(err)
-	{
-		ERROR("Could not open/create syscall log file '" OUTPUT_FILE "' (err=%x).", err);
-		return -1;
-	}
-	
-	if(!sch_output_fd)
-	{
-		ERROR("Could not open/create syscall log file '" OUTPUT_FILE "' (fd==0).");
-		return -2;
-	}
-	INFO("Syscalls will be logged to file '" OUTPUT_FILE "'.");
-
-	// Create buffer
-	sch_buf = malloc(SCH_BUF_LEN);
-	if(!sch_buf) {
-		ERROR("Could not allocate sch_buf.");
-		return -4;
-	}
-
 	// Hook syscalls
 	set_syscall_handler(syscall_handler);
 
