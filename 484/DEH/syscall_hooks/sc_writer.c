@@ -96,10 +96,10 @@ void default_syscall_printer(sc_pool_elmnt_t *pe)
 		SC_PRINTF(info->arg_fmt[i], pe->args[i]);
 	}
 
-	SC_PRINTF(")");
-
 	if(pe->has_res)
-		SC_PRINTF(" -> %lx\n", pe->res);
+		SC_PRINTF(") -> 0x%lx\n", pe->res);
+	else
+		SC_PRINTF(")\n");
 
 	#ifdef USE_ACC_BUF
 		sc_write(scratch, 0);

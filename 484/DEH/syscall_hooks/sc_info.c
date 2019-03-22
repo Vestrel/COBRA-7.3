@@ -928,6 +928,7 @@ int init_syscall_info(void) {
 	syscall_info[SYS_MEMORY_ALLOCATE_FROM_CONTAINER].nargs = 4;
 	syscall_info[SYS_COND_WAIT                     ].nargs = 2;
 
+	syscall_info[817 /* sys_fs_fcntl */            ].trace = 0;
 
 	return 0;
 }

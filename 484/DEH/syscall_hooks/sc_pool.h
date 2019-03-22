@@ -1,7 +1,6 @@
 #ifndef _SC_POOL_H_
 #define _SC_POOL_H_
 
-
 typedef struct sc_pool_elmnt_t sc_pool_elmnt_t;
 #include "sc_writer.h"
 
@@ -18,7 +17,8 @@ typedef struct sc_pool_elmnt_t sc_pool_elmnt_t;
 
 // Pool element
 struct sc_pool_elmnt_t {
-	uint32_t in_use;
+	uint64_t owner; // unique ID of owner of this object, e.g. the thread that did the syscall
+	uint32_t in_use; // 0 if this buffer is available for use, 1 otherwise
 
 	struct syscall_info_t *info;
 

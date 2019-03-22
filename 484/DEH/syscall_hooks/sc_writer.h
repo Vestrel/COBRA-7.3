@@ -27,7 +27,7 @@
 	SC_IND_SNPRINTF(__sc_buf, max_len, fmt, ## __VA_ARGS__ ); \
 } while(0)
 
-#define SC_ACC_PRINTF(buf, buf_len, cur_len, fmt, ...) { \
+#define SC_ACC_PRINTF(buf, buf_len, cur_len, fmt, ...) do { \
 	int __remaining = buf_len - cur_len - 1; \
 	if(__remaining > 0) { \
 		char *__cur = buf + cur_len; \

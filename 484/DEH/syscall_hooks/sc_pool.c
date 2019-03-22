@@ -15,7 +15,7 @@
 /*
  * Defines
  */
-#define SC_POOL_ELEMNT_COUNT 256
+#define SC_POOL_ELEMNT_COUNT 128
 
 
 /*
@@ -84,8 +84,10 @@ sc_pool_elmnt_t* sc_pool_get_elmnt(void) {
 			: [addr] "r" (in_use_ptr), [one] "r" (1)
 		);
 
-		if(!in_use)
+		if(!in_use) {
+			pe = &(pe[i]);
 			break;
+		}
 	}
 
 	// Reserve/allocate buffer
