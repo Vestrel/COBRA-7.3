@@ -5,7 +5,8 @@
 
 #include <lv1/lv1.h>
 #include <lv2/memory.h>
-#include "syscall_info.h"
+
+#include "sc_info.h"
 #include "utilities.h"
 
 
@@ -860,13 +861,17 @@ static int init_syscall_names(void)
 }
 
 
-void init_syscall_info(void) {
+int init_syscall_info(void) {
 	syscall_info = (syscall_info_t*)malloc(sizeof(syscall_info_t) * MAX_NUM_OF_SYSTEM_CALLS);
-	if(syscall_info == NULL)
-		FATAL("ERROR: could not allocate memory for syscall_info!");
+	if(syscall_info == NULL) {
+		ERROR("ERROR: could not allocate memory for syscall_info!");
+		return -1;
+	}
 
-	if(init_syscall_names() != 0)
-		FATAL("ERROR: could not allocate memory for syscall names!");
+	if(init_syscall_names() != 0) {
+		ERROR("ERROR: could not allocate memory for syscall names!");
+		return -2;
+	}
 
 	// Initialize syscall info at runtime */
 	for(uint16_t i = 0; i < MAX_NUM_OF_SYSTEM_CALLS; i++) {
@@ -879,8 +884,9 @@ void init_syscall_info(void) {
 		// Trace enable
 		info->trace = 1;
 
-		// Callback
-		info->cb = (sci_callback*)NULL;
+		// Callbacks
+		info->prepare_cb = (sc_prepare_callback*)NULL;
+		info->writer_cb = (sc_writer_callback*)NULL;
 
 		// Arguments
 		#define ARG_FMT(x) info->arg_fmt[x] = "arg" #x "=0x%1lx"
@@ -921,6 +927,9 @@ void init_syscall_info(void) {
 	syscall_info[SYS_CELLFSLSEEK                   ].nargs = 4;
 	syscall_info[SYS_MEMORY_ALLOCATE_FROM_CONTAINER].nargs = 4;
 	syscall_info[SYS_COND_WAIT                     ].nargs = 2;
+
+
+	return 0;
 }
 
 

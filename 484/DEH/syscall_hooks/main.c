@@ -6,9 +6,10 @@
 #include <lv2/syscall.h>
 
 #include "utilities.h"
-#include "syscall_writer.h"
-#include "syscall_handler.h"
-#include "syscall_info.h"
+#include "sc_writer.h"
+#include "sc_pool.h"
+#include "sc_handler.h"
+#include "sc_info.h"
 
 
 /*
@@ -18,7 +19,11 @@ void main(void)
 {
 	PRINT("Initializing...\n");
 
-	init_syscall_info();
+	if(init_syscall_info() != 0)
+		return;
+	
+	if(init_syscall_pool() != 0)
+		return;
 	
 	if(init_syscall_writer() != 0)
 		return;
