@@ -13,6 +13,12 @@ struct syscall_info_t;
 
 /* Types */
 
+// Syscall groups
+typedef struct syscall_group_t {
+	uint16_t id;
+	char *name;
+} syscall_group_t;
+
 // Callback type for custom dumping
 // If it returns 0, the default dumper is still executed
 typedef int (sc_prepare_callback)(struct sc_pool_elmnt_t *pe);
@@ -25,6 +31,8 @@ typedef struct syscall_info_t {
 	uint8_t trace; // Whether to trace this syscall
 	
 	char *name;
+
+	syscall_group_t *group;
 
 	sc_prepare_callback *prepare_cb; // Callback for setting up the sc_pool_elmnt_t
 	sc_writer_callback *writer_cb; // Callback for custom dumping

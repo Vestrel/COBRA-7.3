@@ -7,10 +7,12 @@
 #include <lv2/synchronization.h>
 #include <lv2/memory.h>
 #include <lv2/thread.h>
+#include <lv2/error.h>
 
 #include "utilities.h"
 #include "sc_writer.h"
 #include "sc_info.h"
+#include "sc_pool.h"
 
 
 /*
@@ -71,8 +73,10 @@ void default_syscall_printer(sc_pool_elmnt_t *pe)
 	syscall_info_t *info = pe->info;
 
 	// Prepare variables
-	char *nm     = info->name;
-	char *proc   = "PROC";//pe->proc;
+	char *nm   = info->name;
+	char *proc = "?";
+	
+	sc_pe_next_str(pe, &proc, NULL);
 	//uint64_t thr = 0;//(uint64_t)pe->thr;
 
 	// Prepare buffer
@@ -86,7 +90,7 @@ void default_syscall_printer(sc_pool_elmnt_t *pe)
 	#endif
 
 	// Print
-	SC_PRINTF("%s %d %s(", proc, info->num, nm);
+	SC_PRINTF("%d> %s %d %s(", pe->uid, proc, info->num, nm);
 
 	uint16_t nargs = info->nargs;
 	for(uint16_t i = 0; i < nargs; i++) {
@@ -161,13 +165,17 @@ static void sc_writer_thread_main(uint64_t arg) {
 			// Process pool element
 			sc_pool_elmnt_t *pe = (sc_pool_elmnt_t*)ptr;
 
-			// Reset buffer
-			sc_pe_restart(pe);
-			on_syscall(pe);
-			//sc_write("received sc_pe\n", 0);
+			if(pe->in_use) {
+				// Trace Buffer
+				sc_pe_restart(pe);
+				on_syscall(pe);
 
-			// Mark no longer in use
-			pe->in_use = 0;
+				// Mark no longer in use
+				pe->in_use = 0;
+			}
+			else {
+				ERROR("sc_writer: pe->in_use=0!");
+			}
 		}
 		else {
 			// Write to file
@@ -190,7 +198,7 @@ static void sc_writer_thread_main(uint64_t arg) {
  */
 int init_syscall_writer(void) {
 	// Event queue & port for inter-thread communication
-	int err = event_queue_create(&sc_evq, SYNC_FIFO, /*event_queue_key*/ 1, /*size 1-127*/ SC_WRITER_QUEUE_SIZE );
+	int err = event_queue_create(&sc_evq, SYNC_PRIORITY, /*event_queue_key*/ 1, /*size 1-127*/ SC_WRITER_QUEUE_SIZE );
 	if(err != 0) {
 		ERROR("Could not initialize sc_evq (err=%x)", err);
 		return -1;
@@ -221,7 +229,7 @@ int init_syscall_writer(void) {
 	}
 
 	// Create writer thread
-	err = ppu_thread_create(&sc_writer_thread, &sc_writer_thread_main, /*arg*/ 0, /*prio*/ 1000, /*stacksize*/ 0x4000, 0, "SCH_sc_writer");
+	err = ppu_thread_create(&sc_writer_thread, &sc_writer_thread_main, /*arg*/ 0, /*prio*/ 0, /*stacksize*/ 0x4000, 0, "SCH_sc_writer");
 	if(err != 0) {
 		ERROR("Could not create sc_writer_thread (err=%x)", err);
 		return -6;
@@ -236,9 +244,17 @@ int init_syscall_writer(void) {
  * Utility Methods
  */
 void sc_send_string(char *buf, int do_free) {
-	event_port_send(sc_evp, (uint64_t)buf, (uint64_t)SC_STRING, (uint64_t)do_free);
+	int err = event_port_send(sc_evp, (uint64_t)buf, (uint64_t)SC_STRING, (uint64_t)do_free);
+
+	if(err != 0 && err != EBUSY)
+		ERROR("Could not submit to event_port (err=%x)", err);
 }
 
 void sc_send_pool_elmnt(sc_pool_elmnt_t *pe) {
-	event_port_send(sc_evp, (uint64_t)pe, (uint64_t)SC_POOL_ELMNT, 0);
+	int err = event_port_send(sc_evp, (uint64_t)pe, (uint64_t)SC_POOL_ELMNT, 0);
+
+	if(err != 0 && err != EBUSY) {
+		ERROR("Could not submit to event_port (err=%x)", err);
+		pe->in_use = 0;
+	}
 }

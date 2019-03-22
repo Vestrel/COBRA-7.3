@@ -49,7 +49,7 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 	}*/
 
 	sc_pool_elmnt_t *pe = NULL;
-	thread_t thread = NULL;
+	uint32_t pe_uid = 0;
 
 	// Suspend syscall
 	suspend_intr();
@@ -61,14 +61,12 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 		if(info->trace) {
 			pe = sc_pool_get_elmnt();
 			if(pe != NULL) {
-				thread = get_current_thread();
-
 				pe->info = info;
+				pe_uid = pe->uid;
 
 				// We don't know the result yet
 				pe->res     =    0;
 				pe->has_res =    0;
-				pe->owner   = (uint64_t)thread;
 
 				// But we know the parameters
 				pe->args[0] =  r3;
@@ -79,8 +77,44 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 				pe->args[5] =  r8;
 				pe->args[6] =  r9;
 				pe->args[7] = r10;
+				
+				// Processor name
+				process_t proc = get_current_process();
+				char *proc_nm;
+				char *dot = NULL;
+				if(proc) {
+					 // get_process_name() returns e.g. 01000300_main_vsh.self 
+					proc_nm = get_process_name(proc);
 
+					// Remove the ID
+					proc_nm += 8;
+
+					// Remove the _main_
+					if(strncmp(proc_nm, "_main_", 6) == 0)
+						proc_nm += 6;
+
+					// Remove the '.self'
+					dot = strrchr(proc_nm, '.');
+					if(dot != NULL && strncmp(dot, ".self", 5) == 0)
+						*dot = '\0';
+					else
+						dot = NULL;
+				}
+				else
+					proc_nm = "KERNEL";
+
+				// TODO: Allow filtering by process
+
+				sc_pe_add_str(pe, proc_nm);
+				
+				// TODO: Call pe->info->prepare_cb
+
+				// Finish up, and send it to the writer thread!
 				sc_send_pool_elmnt(pe);
+
+				// Restore proc_nm dot
+				if(dot != NULL)
+					*dot = '.';
 			}
 		}
 	}
@@ -96,7 +130,7 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 	uint64_t res = syscall(r3, r4, r5, r6, r7, r8, r9, r10);
 
 	// Store result (if we are still alive here, not all syscalls return)
-	if(pe != NULL && pe->owner == (uint64_t)thread) {
+	if(pe != NULL && pe->uid == pe_uid) {
 		pe->res = res;
 		pe->has_res = 1;
 	}

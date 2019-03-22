@@ -15,7 +15,7 @@
 /*
  * Defines
  */
-#define SC_POOL_ELEMNT_COUNT 128
+#define SC_POOL_ELEMNT_COUNT 130
 
 
 /*
@@ -30,6 +30,7 @@ typedef struct sc_pool_t {
  * Variables
  */
 static sc_pool_t *sc_pool;
+uint32_t uid_counter;
 
 
 /*
@@ -64,52 +65,152 @@ int init_syscall_pool(void) {
 /*
  * Utility Methods
  */
+void sc_pe_restart(sc_pool_elmnt_t *pe) {
+	pe->buf_pos = pe->buf;
+}
+
+#define PE_CHECK_SIZE(pe, err) do { \
+		if(pe->buf_pos > pe->buf_end) \
+			return err; \
+	} while(0)
+
+#define PE_CHECK_ERROR(cond) do { \
+		sc_pe_ret_e __ret = (cond); \
+		if(__ret != SC_PE_OK) return __ret; \
+	} while(0)
+
+#define DECL_PE_INT(suffix, type) \
+sc_pe_ret_e sc_pe_next_##suffix(sc_pool_elmnt_t *pe, type *out) { \
+	PE_CHECK_SIZE(pe, SC_PE_END); \
+\
+	type *ptr = (type*)(pe->buf_pos); \
+\
+	pe->buf_pos += sizeof(type); \
+	PE_CHECK_SIZE(pe, SC_PE_OVERFLOW); \
+\
+	*out = *ptr; \
+\
+	return SC_PE_OK; \
+} \
+\
+sc_pe_ret_e sc_pe_add_##suffix(sc_pool_elmnt_t *pe, type in) { \
+	type *ptr = (type*)(pe->buf_pos); \
+\
+	pe->buf_pos += sizeof(in); \
+	if(pe->buf_pos > pe->buf + SC_POOL_BUF_SIZE) \
+		return SC_PE_OVERFLOW; \
+\
+	*ptr = in; \
+	pe->buf_end = pe->buf_pos; \
+\
+	return SC_PE_OK; \
+}
+
+DECL_PE_INT(u8 , uint8_t );
+DECL_PE_INT(u16, uint16_t);
+DECL_PE_INT(u32, uint32_t);
+DECL_PE_INT(u64, uint64_t);
+DECL_PE_INT(i8 , int8_t );
+DECL_PE_INT(i16, int16_t);
+DECL_PE_INT(i32, int32_t);
+DECL_PE_INT(i64, int64_t);
+
+sc_pe_ret_e sc_pe_next(sc_pool_elmnt_t *pe, void **out, uint16_t *len) {
+	uint16_t _len;
+	PE_CHECK_ERROR(sc_pe_next_u16(pe, &_len));
+
+	if(len != NULL) *len = _len;
+	if(out != NULL) *out = _len ? (void*)(pe->buf_pos) : NULL;
+	pe->buf_pos += _len;
+
+	PE_CHECK_SIZE(pe, SC_PE_OVERFLOW);
+
+	return SC_PE_OK;
+}
+
+sc_pe_ret_e sc_pe_next_str(sc_pool_elmnt_t *pe, char **out, uint16_t *len) {
+	return sc_pe_next(pe, (void**)out, len);
+}
+
+sc_pe_ret_e sc_pe_add(sc_pool_elmnt_t *pe, void *in, uint16_t len) {
+	void *ptr = pe->buf_pos;
+
+	pe->buf_pos += len + sizeof(uint16_t);
+	if(pe->buf_pos > pe->buf + SC_POOL_BUF_SIZE)
+		return SC_PE_OVERFLOW;
+
+	*(uint16_t*)ptr = len;
+
+	if(len > 0)
+		memcpy(ptr + sizeof(uint16_t), in, len);
+
+	pe->buf_end = pe->buf_pos;
+
+	return SC_PE_OK;
+}
+
+sc_pe_ret_e sc_pe_add_str(sc_pool_elmnt_t *pe, char *in) {
+	return sc_pe_add(pe, (void*)in, strlen(in)+1);
+}
+
+uint16_t sc_pe_remaining(sc_pool_elmnt_t *pe) {
+	if(pe->buf_pos >= pe->buf_end) return 0;
+	return (uint16_t)(pe->buf_end - pe->buf_pos);
+}
+
+uint16_t sc_pe_remaining_space(sc_pool_elmnt_t *pe) {
+	void *end = pe->buf + SC_POOL_BUF_SIZE;
+	if(pe->buf_pos >= end) return 0;
+	return (uint16_t)(end - pe->buf_pos);
+}
+
+
+
 sc_pool_elmnt_t* sc_pool_get_elmnt(void) {
+	// Calculate unique ID
+	uint32_t uid, tmp;
+	__asm__ __volatile__ (
+		"retry_uid: \n\t"
+		"lwarx %[dst], 0, %[addr] \n\t"
+		"addi %[tmp], %[dst], 1 \n\t"
+		"stwcx. %[tmp], 0, %[addr] \n\t"
+		"bne- retry_uid \n\t"
+		: [dst] "=&r" (uid), [tmp] "=&r" (tmp)
+		: [addr] "r" (&uid_counter)
+	);
+
 	// Search for free buffer slot
 	sc_pool_elmnt_t *pe = sc_pool->elemnts;
-	char *err = NULL;
 
 	uint32_t i;
-	for(i = 0; i < SC_POOL_ELEMNT_COUNT; i++) {
-		uint32_t *in_use_ptr = &(pe[i].in_use);
+	for(i = 0; i < SC_POOL_ELEMNT_COUNT; i++, pe++) {
+		uint32_t *in_use_ptr = &(pe->in_use);
 		uint32_t in_use = 0;
 
 		// exchange 'in_use' atomically by 1
 		__asm__ __volatile__ (
-			"retry: \n\t"
+			"retry_in_use: \n\t"
 			"lwarx %[dst], 0, %[addr] \n\t"
 			"stwcx. %[one], 0, %[addr] \n\t"
-			"bne- retry \n\t"
+			"bne- retry_in_use \n\t"
 			: [dst] "=&r" (in_use)
 			: [addr] "r" (in_use_ptr), [one] "r" (1)
 		);
 
-		if(!in_use) {
-			pe = &(pe[i]);
+		if(!in_use)
 			break;
-		}
 	}
 
-	// Reserve/allocate buffer
+	// Sanity check
 	if(i >= SC_POOL_ELEMNT_COUNT) {
-		pe = NULL;
-		err = ">OOB<\n";
-	}
-
-	// Return
-	if(err != NULL) {
-		sc_send_string(err, 0);
+		//sc_send_string(">OOB<\n", 0);
 		//ERROR("%s", err);
 		return NULL;
 	}
-
-	// Point 'cur' pointer to beginning of 'buf', and return
-	pe->buf_len = 0;
-	pe->buf_ptr = pe->buf;
+	
+	// Reset PE and return
+	pe->uid = uid;
+	pe->buf_pos = pe->buf;
+	pe->buf_end = pe->buf;
 	return pe;
-}
-
-
-void sc_pe_restart(sc_pool_elmnt_t *pe) {
-	pe->buf_ptr = pe->buf;
 }
