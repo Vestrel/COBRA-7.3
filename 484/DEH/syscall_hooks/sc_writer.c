@@ -95,7 +95,7 @@ void default_syscall_printer(sc_pool_elmnt_t *pe)
 	#ifdef SC_LOG_MINIMUM
 		SC_PRINTF("%u(%hhu)> [%x,%x] %hd ", pe->uid, pe->hwt, pe->pid, pe->tid, info->num);
 	#else
-		SC_PRINTF("%u(%hhu)> [%x:%s,%x:%s] %hd %s(", pe->uid, pe->hwt, pe->pid, proc_nm, pe->tid, thrd_nm, info->num, nm);
+		SC_PRINTF("%u(%hhu)> [PID=%x '%s'; TID=%x '%s'] %hd %s(", pe->uid, pe->hwt, pe->pid, proc_nm, pe->tid, thrd_nm, info->num, nm);
 	#endif
 	
 	// Print args

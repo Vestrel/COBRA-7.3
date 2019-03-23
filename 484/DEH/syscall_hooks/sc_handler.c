@@ -20,53 +20,55 @@
 /*
  * Helper methods
  */
-static void sc_add_hwt_info(sc_pool_elmnt_t *pe) {
+static void sc_add_process_and_thread_info(sc_pool_elmnt_t *pe) {
+	// HWT
 	pe->hwt = get_HW_cur()->id;
-}
 
-static void sc_add_process_info(sc_pool_elmnt_t *pe) {
+	// Process
 	process_t proc = get_current_process();
+	#ifndef SC_LOG_MINIMUM
+		char *orig_proc_nm = NULL;
+	#endif
 
 	// Fast-path for NULL case
 	if(proc == NULL) {
 		pe->pid = 0;
 		#ifndef SC_LOG_MINIMUM
-			sc_pe_add_str(pe, "KRN");
+			sc_pe_add_str(pe, NULL);
 		#endif
-		return;
 	}
+	else {
+		// PID
+		pe->pid = proc->pid;
 
-	// PID
-	pe->pid = proc->pid;
+		#ifndef SC_LOG_MINIMUM
+			// get_process_name() returns e.g. <PID>_main_vsh.self 
+			orig_proc_nm = get_process_name(proc);
 
-	#ifndef SC_LOG_MINIMUM
-		// get_process_name() returns e.g. 01000300_main_vsh.self 
-		char *proc_nm = get_process_name(proc);
+			// Remove the ID
+			char *proc_nm = orig_proc_nm + 8;
 
-		// Remove the ID
-		proc_nm += 8;
+			// Remove the _main_
+			if(strncmp(proc_nm, "_main_", 6) == 0)
+				proc_nm += 6;
 
-		// Remove the _main_
-		if(strncmp(proc_nm, "_main_", 6) == 0)
-			proc_nm += 6;
+			// Remove the '.self'
+			char *dot = strrchr(proc_nm, '.');
+			if(dot != NULL && strncmp(dot, ".self", 5) == 0)
+				*dot = '\0';
+			else
+				dot = NULL;
 
-		// Remove the '.self'
-		char *dot = strrchr(proc_nm, '.');
-		if(dot != NULL && strncmp(dot, ".self", 5) == 0)
-			*dot = '\0';
-		else
-			dot = NULL;
+			// Submit
+			sc_pe_add_str(pe, proc_nm);
 
-		// Submit
-		sc_pe_add_str(pe, proc_nm);
-
-		// Add the '.' back
-		if(dot != NULL)
-			*dot = '.';
-	#endif
-}
-
-static void sc_add_thread_info(sc_pool_elmnt_t *pe) {
+			// Add the '.' back
+			if(dot != NULL)
+				*dot = '.';
+		#endif
+	}
+	
+	// Thread
 	thread_obj_t *tobj = get_thread_obj();
 
 	if(!tobj) {
@@ -76,12 +78,29 @@ static void sc_add_thread_info(sc_pool_elmnt_t *pe) {
 		#endif
 		return;
 	}
+	else {
+		pe->tid = tobj->id;
 
-	pe->tid = tobj->id;
+		#ifndef SC_LOG_MINIMUM
+			if(orig_proc_nm != NULL && strcmp(tobj->name, orig_proc_nm) == 0) {
+				sc_pe_add_str(pe, "MAIN");
+			}
+			else {
+				// The thread name is usually e.g. <PID>_main_<THRD_NAME> 
+				char *thrd_nm = tobj->name;
 
-	#ifndef SC_LOG_MINIMUM
-		sc_pe_add_str(pe, tobj->name);
-	#endif
+				// Remove the ID if it matches the process name
+				if(orig_proc_nm != NULL && strncmp(thrd_nm, orig_proc_nm, 8) == 0)
+					thrd_nm = thrd_nm + 8;
+
+				// Remove the "_main_"
+				if(strncmp(thrd_nm, "_main_", 6) == 0)
+					thrd_nm += 6;
+
+				sc_pe_add_str(pe, tobj->name);
+			}
+		#endif
+	}
 }
 
 
@@ -148,9 +167,7 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 				// TODO: HW Thread number
 
 				// Process/Thread information
-				sc_add_hwt_info(pe);
-				sc_add_process_info(pe);
-				sc_add_thread_info(pe);
+				sc_add_process_and_thread_info(pe);
 
 				//Callback
 				int skip = 0;
