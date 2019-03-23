@@ -23,7 +23,7 @@
 #include "crypto.h"
 #include "mappath.h"
 #include "modulespatch.h"
-#include "syscall_hook.h"
+//#include "syscall_hook.h"
 
 
 //#define ps2emu_entry1_bc 0x165B44
@@ -137,6 +137,7 @@ static DiscFileProxy *discfile_proxy;
 static int disc_being_mounted = 0;
 static int could_not_read_disc;
 static int hdd0_mounted = 0;
+static int flash_mounted = 0;
 
 int ps2emu_type;
 
@@ -2374,7 +2375,10 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_8(int, post_cellFsUtilMount, (const char *bl
 		DPRINTF("cellFsUtilMount: %s\n", mount_point);
 	#endif*/
 	
-	lv2_printf("cellFsUtilMount: %s (%s) RO=%d\n", mount_point, filesystem, read_only);
+	lv2_printf("cellFsUtilMount(blk_dev='%s', fs='%s', mount='%s', unk=%d, ro=%d, unk2=%d, argv=%lx, argc=%d)\n", block_dev, filesystem, mount_point, unk, read_only, unk2, (uint64_t)argv, argc);
+	for(int i = 0; i < argc; i++) {
+		lv2_printf("argv[i] = '%s'\n", argv[i]);
+	}
 
 	if (!hdd0_mounted && strcmp(mount_point, "/dev_hdd0") == 0 && strcmp(filesystem, "CELL_FS_UFS") == 0)
 	{
@@ -2384,11 +2388,11 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_8(int, post_cellFsUtilMount, (const char *bl
 		read_cobra_config();
 		// do_spoof_patches();
 		load_boot_plugins();
-		load_boot_plugins_kernel();
+		load_boot_plugins_kernel(mount_point);
 		// update_hashes();
 		
 		// Syscall Hook
-		syscall_hook_init();
+		//syscall_hook_init();
 		
 		// Remaining code
 		mutex_lock(mutex, 0);
@@ -2408,6 +2412,12 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_8(int, post_cellFsUtilMount, (const char *bl
 		/*#ifndef DEBUG
 			unhook_function_on_precall_success(cellFsUtilMount_symbol, post_cellFsUtilMount, 8); //Hook no more needed
 		#endif*/
+	}
+	else if(!flash_mounted && strcmp(mount_point, "/dev_flash") == 0)
+	{
+		flash_mounted = 1;
+
+		load_boot_plugins_kernel(mount_point);
 	}
 
 	return 0;

@@ -45,23 +45,28 @@ static int sc_fd;
  * File Handling
  */
 void sc_write(char *buf, uint64_t size) {
-	if(!sc_fd) {
-		ERROR("sc_write->sc_fd==0! Stopping syscall logging.");
-		ppu_thread_exit(1);
-	}
+	#ifndef SC_LOG_TO_FILE
+		lv2_printf(buf);
+		return;
 
-	if(size == 0)
-		size = strlen(buf);
+	#else
+		if(!sc_fd) {
+			ERROR("sc_write->sc_fd==0! Stopping syscall logging.");
+			ppu_thread_exit(1);
+		}
 
-	int err = cellFsWrite(sc_fd, buf, size, NULL);
+		if(size == 0)
+			size = strlen(buf);
 
-	if(err) {
-		ERROR("sc_write->cellFsWrite failed (err=%x)! Stopping syscall logging.", err);
-		cellFsClose(sc_fd);
-		sc_fd = 0;
-		ppu_thread_exit(1);
-	}
-	//lv2_printf(buf);
+		int err = cellFsWrite(sc_fd, buf, size, NULL);
+
+		if(err) {
+			ERROR("sc_write->cellFsWrite failed (err=%x)! Stopping syscall logging.", err);
+			cellFsClose(sc_fd);
+			sc_fd = 0;
+			ppu_thread_exit(1);
+		}
+	#endif
 }
 
 
@@ -233,15 +238,17 @@ int init_syscall_writer(void) {
 
 	// Open log file
 	sc_fd = 0;
-	err = cellFsOpen(SC_WRITER_FILE, CELL_FS_O_WRONLY | CELL_FS_O_CREAT | CELL_FS_O_TRUNC, &sc_fd, 0666, NULL, 0);
-	if(err) {
-		ERROR("Could not open/create syscall log file '" SC_WRITER_FILE "' (err=%x).", err);
-		return -4;
-	}
-	if(!sc_fd) {
-		ERROR("Could not open/create syscall log file '" SC_WRITER_FILE "' (fd==0).");
-		return -5;
-	}
+	#ifdef SC_LOG_TO_FILE
+		err = cellFsOpen(SC_WRITER_FILE, CELL_FS_O_WRONLY | CELL_FS_O_CREAT | CELL_FS_O_TRUNC, &sc_fd, 0666, NULL, 0);
+		if(err) {
+			ERROR("Could not open/create syscall log file '" SC_WRITER_FILE "' (err=%x).", err);
+			return -4;
+		}
+		if(!sc_fd) {
+			ERROR("Could not open/create syscall log file '" SC_WRITER_FILE "' (fd==0).");
+			return -5;
+		}
+	#endif
 
 	// Create writer thread
 	err = ppu_thread_create(&sc_writer_thread, &sc_writer_thread_main, /*arg*/ 0, /*prio*/ 0, /*stacksize*/ 0x4000, 0, "SCH_sc_writer");

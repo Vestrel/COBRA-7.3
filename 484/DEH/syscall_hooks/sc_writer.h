@@ -16,6 +16,9 @@
 // Minimum log size - will only trace the most important things
 //#define SC_LOG_MINIMUM
 
+// Log to file
+#define SC_LOG_TO_FILE
+
 // Disable writer callback
 //#define SC_WRITER_NO_CALLBACKS
 

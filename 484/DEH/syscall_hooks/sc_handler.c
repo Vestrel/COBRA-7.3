@@ -139,7 +139,7 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 	sc_pool_elmnt_t *pe = NULL;
 	uint32_t pe_uid = 0;
 
-	// Prepare a single memory representation of this structure, to avoid copying around data all the time
+	// Trace the syscall
 	if(num < MAX_NUM_OF_SYSTEM_CALLS) {
 		syscall_info_t *info = get_syscall_info(num);
 		
@@ -163,8 +163,6 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 				pe->args[5] =  r8;
 				pe->args[6] =  r9;
 				pe->args[7] = r10;
-
-				// TODO: HW Thread number
 
 				// Process/Thread information
 				sc_add_process_and_thread_info(pe);

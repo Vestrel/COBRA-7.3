@@ -30,7 +30,8 @@
 #define MAX_BOOT_PLUGINS_KERNEL		5
 #define PRX_PATH					"/dev_flash/vsh/module/webftp_server.sprx"
 
-#define APPHOME_BOOT_PLUGINS_KERNEL_FILE "/app_home/boot_plugins_kernel.txt"
+#define APPHOME_BOOT_PLUGINS_DEVFLASH_FILE "/app_home/boot_plugins_devflash.txt"
+#define APPHOME_BOOT_PLUGINS_HDD0_FILE "/app_home/boot_plugins_hdd0.txt"
 
 LV2_EXPORT int decrypt_func(uint64_t *, uint32_t *);
 
@@ -1077,29 +1078,33 @@ uint64_t load_plugin_kernel(char *path)
 	return -1;
 }
 
-void load_boot_plugins_kernel_file(char *list_path, uint32_t *current_slot_kernel, uint32_t *num_loaded_kernel)
+
+static uint32_t current_slot_kernel = 0;
+static uint32_t num_loaded_kernel = 0;
+
+static void load_boot_plugins_kernel_file(char *list_path)
 {
 	int fd;
-	
+
 	if (cellFsOpen(list_path, CELL_FS_O_RDONLY, &fd, 0, NULL, 0) == 0)
 	{
-		while (*num_loaded_kernel < MAX_BOOT_PLUGINS_KERNEL)
+		while (num_loaded_kernel < MAX_BOOT_PLUGINS_KERNEL)
 		{
 			char path[128];
 			int eof;
-			
+
 			if (read_text_line(fd, path, sizeof(path), &eof) > 0)
 			{
 				uint64_t ret = load_plugin_kernel(path);
-					
+
 				if (ret >= 0)
 				{
-					DPRINTF("Load boot plugin %s (slot=%x)\n", path, *current_slot_kernel);
-					*current_slot_kernel += 1;
-					*num_loaded_kernel += 1;
+					DPRINTF("Load boot plugin %s (slot=%x)\n", path, current_slot_kernel);
+					current_slot_kernel += 1;
+					num_loaded_kernel += 1;
 				}
 			}
-			
+
 			if (eof)
 				break;
 		}
@@ -1112,23 +1117,31 @@ void load_boot_plugins_kernel_file(char *list_path, uint32_t *current_slot_kerne
 	}
 }
 
-void load_boot_plugins_kernel(void)
+void load_boot_plugins_kernel(const char *mount_point)
 {
-	uint32_t current_slot_kernel = 0;
-	uint32_t num_loaded_kernel = 0;
-	
 	if (safe_mode)
 	{
 		cellFsUnlink(BOOT_PLUGINS_KERNEL_FILE);
 		return;
 	}
-	
-	if (!vsh_process)
-		return;	  // lets wait till vsh so we dont brick the console perma!
 
-	load_boot_plugins_kernel_file(BOOT_PLUGINS_KERNEL_FILE, &current_slot_kernel, &num_loaded_kernel);
-	
-	load_boot_plugins_kernel_file(APPHOME_BOOT_PLUGINS_KERNEL_FILE, &current_slot_kernel, &num_loaded_kernel);
+	if(strcmp(mount_point, "/dev_flash") == 0)
+	{
+		load_boot_plugins_kernel_file(APPHOME_BOOT_PLUGINS_DEVFLASH_FILE);
+	}
+	else if(strcmp(mount_point, "/dev_hdd0") == 0)
+	{
+		if (!vsh_process)
+			return;	  // lets wait till vsh so we dont brick the console perma!
+
+		load_boot_plugins_kernel_file(BOOT_PLUGINS_KERNEL_FILE);
+
+		load_boot_plugins_kernel_file(APPHOME_BOOT_PLUGINS_HDD0_FILE);
+	}
+	else
+	{
+		lv2_printf("load_boot_plugins_kernel: Unknown mount point '%s'\n", mount_point);
+	}
 }
 
 // webMAN integration support

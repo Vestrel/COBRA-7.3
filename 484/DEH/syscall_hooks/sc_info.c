@@ -913,7 +913,7 @@ int init_syscall_info(void) {
 	}
 
 	// Specific syscalls (TODO: Move interesting ones to separate files)
-	syscall_info[SYS_COND_SIGNAL                   ].nargs = 1;
+	/*syscall_info[SYS_COND_SIGNAL                   ].nargs = 1;
 	syscall_info[SYS_MEMORY_ALLOCATE               ].nargs = 1;
 	syscall_info[SYS_LWMUTEX_LOCK                  ].nargs = 2;
 	syscall_info[SYS_LWMUTEX_UNLOCK                ].nargs = 1;
@@ -938,9 +938,9 @@ int init_syscall_info(void) {
 	syscall_info[SYS_NET_CONTROL                   ].nargs = 4;
 	syscall_info[SYS_CELLFSLSEEK                   ].nargs = 4;
 	syscall_info[SYS_MEMORY_ALLOCATE_FROM_CONTAINER].nargs = 4;
-	syscall_info[SYS_COND_WAIT                     ].nargs = 2;
+	syscall_info[SYS_COND_WAIT                     ].nargs = 2;*/
 
-	syscall_info[817 /* sys_fs_fcntl */            ].trace = 0;
+	//syscall_info[817 /* sys_fs_fcntl */            ].trace = 0;
 
 	return 0;
 }
@@ -948,5 +948,5 @@ int init_syscall_info(void) {
 
 syscall_info_t *get_syscall_info(uint16_t num)
 {
-	return &(syscall_info[num - 1]);
+	return &(syscall_info[num]);
 }
