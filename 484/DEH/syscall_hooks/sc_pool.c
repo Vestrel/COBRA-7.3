@@ -15,7 +15,8 @@
 /*
  * Defines
  */
-#define SC_POOL_ELEMNT_COUNT 130
+#define SC_POOL_LOCKING
+#define SC_POOL_ELEMNT_COUNT 127
 
 
 /*
@@ -31,6 +32,10 @@ typedef struct sc_pool_t {
  */
 static sc_pool_t *sc_pool;
 uint32_t uid_counter;
+
+#ifdef SC_POOL_LOCKING
+	static sema_t sc_pool_sem;
+#endif
 
 
 /*
@@ -56,6 +61,11 @@ int init_syscall_pool(void) {
 		sc_pool->elemnts[i].buf = buf;
 	}
 
+	#ifdef SC_POOL_LOCKING
+		// Semaphore
+		semaphore_initialize(&sc_pool_sem, SYNC_PRIORITY, SC_POOL_ELEMNT_COUNT, SC_POOL_ELEMNT_COUNT, SYNC_NOT_PROCESS_SHARED);
+	#endif
+
 	// Success
 	INFO("SC Buffer Pool initialized!");
 	return 0;
@@ -65,6 +75,14 @@ int init_syscall_pool(void) {
 /*
  * Utility Methods
  */
+void sc_pe_unlock(sc_pool_elmnt_t *pe) {
+	pe->in_use = 0;
+
+	#ifdef SC_POOL_LOCKING
+		semaphore_post(&sc_pool_sem, 1);
+	#endif
+}
+
 void sc_pe_restart(sc_pool_elmnt_t *pe) {
 	pe->buf_pos = pe->buf;
 }
@@ -150,7 +168,7 @@ sc_pe_ret_e sc_pe_add(sc_pool_elmnt_t *pe, void *in, uint16_t len) {
 }
 
 sc_pe_ret_e sc_pe_add_str(sc_pool_elmnt_t *pe, char *in) {
-	return sc_pe_add(pe, (void*)in, strlen(in)+1);
+	return sc_pe_add(pe, (void*)in, in ? strlen(in)+1 : 0);
 }
 
 uint16_t sc_pe_remaining(sc_pool_elmnt_t *pe) {
@@ -179,6 +197,11 @@ sc_pool_elmnt_t* sc_pool_get_elmnt(void) {
 		: [addr] "r" (&uid_counter)
 	);
 
+	#ifdef SC_POOL_LOCKING
+		// Wait until one buffer is free
+		semaphore_wait(&sc_pool_sem, 0);
+	#endif
+
 	// Search for free buffer slot
 	sc_pool_elmnt_t *pe = sc_pool->elemnts;
 
@@ -203,8 +226,9 @@ sc_pool_elmnt_t* sc_pool_get_elmnt(void) {
 
 	// Sanity check
 	if(i >= SC_POOL_ELEMNT_COUNT) {
-		//sc_send_string(">OOB<\n", 0);
-		//ERROR("%s", err);
+		#ifdef SC_POOL_LOCKING
+			ERROR("sc_pool_get_elmnt: Out of Buffers!");
+		#endif
 		return NULL;
 	}
 	

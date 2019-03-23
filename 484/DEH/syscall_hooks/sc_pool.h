@@ -9,6 +9,7 @@ typedef struct sc_pool_elmnt_t sc_pool_elmnt_t;
  */
 #define SC_POOL_BUF_SIZE KB(4)
 #define SYSCALLT_MAX_NAME_LEN 32
+#define SC_POOL_LOCKING
 
 
 /*
@@ -24,6 +25,11 @@ struct sc_pool_elmnt_t {
 
 	uint64_t args[8];
 	uint64_t res;
+
+	uint32_t pid;
+	uint32_t tid;
+	uint8_t hwt;
+
 	uint8_t has_res;
 
 	void *buf; // pointer to a buffer of SC_POOL_BUF_SIZE
@@ -46,6 +52,7 @@ extern int init_syscall_pool(void);
 
 extern sc_pool_elmnt_t* sc_pool_get_elmnt(void);
 
+extern void sc_pe_unlock(sc_pool_elmnt_t *pe);
 extern void sc_pe_restart(sc_pool_elmnt_t *pe); // restart from the beginning of 'buf'
 
 #define HEADER_PE_INT(suffix, type) \

@@ -7,6 +7,7 @@
 #include <lv2/memory.h>
 
 #include "sc_info.h"
+#include "sc_writer.h"
 #include "utilities.h"
 
 
@@ -16,20 +17,30 @@ syscall_info_t *syscall_info;
  * Initial syscall information
  * Copied from RPCS3 https://github.com/RPCS3/rpcs3/blob/master/rpcs3/Emu/Cell/lv2/lv2.cpp
  */
-#define BIND_FUNC(x) { \
-	syscall_info[i].name = #x; \
-	i++; \
+static char* generate_numeric_syscall_name(uint16_t i) {
+	char* c = (char*)malloc(7 * sizeof(char));
+	if(c == NULL) return NULL;
+	sprintf(c, "sc%hu", i);
+	return c;
 }
 
 #define null_func { \
-	char* c = (char*)malloc(7 * sizeof(char)); \
+	char* c = generate_numeric_syscall_name(i); \
 	if(c == NULL) return 1; \
-	sprintf(c, "sc%hu", i); \
 	syscall_info[i].name = c; \
 	i++; \
 }
 
 #define uns_func null_func
+
+#ifdef SC_LOG_MINIMUM
+	#define BIND_FUNC(x) null_func
+#else
+	#define BIND_FUNC(x) { \
+		syscall_info[i].name = #x; \
+		i++; \
+	}
+#endif
 
 static int init_syscall_names(void)
 {
@@ -885,8 +896,9 @@ int init_syscall_info(void) {
 		info->trace = 1;
 
 		// Callbacks
-		info->prepare_cb = (sc_prepare_callback*)NULL;
-		info->writer_cb = (sc_writer_callback*)NULL;
+		info->prepare_cb = (sc_callback*)NULL;
+		info->pre_writer_cb = (sc_callback*)NULL;
+		info->post_writer_cb = (sc_callback*)NULL;
 
 		// Arguments
 		#define ARG_FMT(x) info->arg_fmt[x] = "arg" #x "=0x%1lx"

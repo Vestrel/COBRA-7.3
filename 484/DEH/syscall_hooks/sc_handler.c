@@ -8,12 +8,81 @@
 #include <lv2/synchronization.h>
 #include <lv2/memory.h>
 #include <lv2/thread.h>
+#include <lv2/hw_cur.h>
 
 #include "sc_handler.h"
 #include "sc_pool.h"
 #include "sc_writer.h"
 #include "sc_info.h"
 #include "utilities.h"
+
+
+/*
+ * Helper methods
+ */
+static void sc_add_hwt_info(sc_pool_elmnt_t *pe) {
+	pe->hwt = get_HW_cur()->id;
+}
+
+static void sc_add_process_info(sc_pool_elmnt_t *pe) {
+	process_t proc = get_current_process();
+
+	// Fast-path for NULL case
+	if(proc == NULL) {
+		pe->pid = 0;
+		#ifndef SC_LOG_MINIMUM
+			sc_pe_add_str(pe, "KRN");
+		#endif
+		return;
+	}
+
+	// PID
+	pe->pid = proc->pid;
+
+	#ifndef SC_LOG_MINIMUM
+		// get_process_name() returns e.g. 01000300_main_vsh.self 
+		char *proc_nm = get_process_name(proc);
+
+		// Remove the ID
+		proc_nm += 8;
+
+		// Remove the _main_
+		if(strncmp(proc_nm, "_main_", 6) == 0)
+			proc_nm += 6;
+
+		// Remove the '.self'
+		char *dot = strrchr(proc_nm, '.');
+		if(dot != NULL && strncmp(dot, ".self", 5) == 0)
+			*dot = '\0';
+		else
+			dot = NULL;
+
+		// Submit
+		sc_pe_add_str(pe, proc_nm);
+
+		// Add the '.' back
+		if(dot != NULL)
+			*dot = '.';
+	#endif
+}
+
+static void sc_add_thread_info(sc_pool_elmnt_t *pe) {
+	thread_obj_t *tobj = get_thread_obj();
+
+	if(!tobj) {
+		pe->tid = 0;
+		#ifndef SC_LOG_MINIMUM
+			sc_pe_add_str(pe, NULL);
+		#endif
+		return;
+	}
+
+	pe->tid = tobj->id;
+
+	#ifndef SC_LOG_MINIMUM
+		sc_pe_add_str(pe, tobj->name);
+	#endif
+}
 
 
 /*
@@ -51,15 +120,13 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 	sc_pool_elmnt_t *pe = NULL;
 	uint32_t pe_uid = 0;
 
-	// Suspend syscall
-	suspend_intr();
-
 	// Prepare a single memory representation of this structure, to avoid copying around data all the time
 	if(num < MAX_NUM_OF_SYSTEM_CALLS) {
 		syscall_info_t *info = get_syscall_info(num);
 		
 		if(info->trace) {
 			pe = sc_pool_get_elmnt();
+			suspend_intr();
 			if(pe != NULL) {
 				pe->info = info;
 				pe_uid = pe->uid;
@@ -77,54 +144,38 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 				pe->args[5] =  r8;
 				pe->args[6] =  r9;
 				pe->args[7] = r10;
-				
-				// Processor name
-				process_t proc = get_current_process();
-				char *proc_nm;
-				char *dot = NULL;
-				if(proc) {
-					 // get_process_name() returns e.g. 01000300_main_vsh.self 
-					proc_nm = get_process_name(proc);
 
-					// Remove the ID
-					proc_nm += 8;
+				// TODO: HW Thread number
 
-					// Remove the _main_
-					if(strncmp(proc_nm, "_main_", 6) == 0)
-						proc_nm += 6;
+				// Process/Thread information
+				sc_add_hwt_info(pe);
+				sc_add_process_info(pe);
+				sc_add_thread_info(pe);
 
-					// Remove the '.self'
-					dot = strrchr(proc_nm, '.');
-					if(dot != NULL && strncmp(dot, ".self", 5) == 0)
-						*dot = '\0';
-					else
-						dot = NULL;
+				//Callback
+				int skip = 0;
+				#ifndef SC_HANDLER_NO_CALLBACKS
+					sc_callback *cb = info->prepare_cb;
+					if(cb && cb(pe) != 0)
+						skip = 1;
+				#endif
+
+				// Submit parameters
+				if(!skip) {
+					sc_send_pool_elmnt(pe);
 				}
-				else
-					proc_nm = "KERNEL";
-
-				// TODO: Allow filtering by process
-
-				sc_pe_add_str(pe, proc_nm);
-				
-				// TODO: Call pe->info->prepare_cb
-
-				// Finish up, and send it to the writer thread!
-				sc_send_pool_elmnt(pe);
-
-				// Restore proc_nm dot
-				if(dot != NULL)
-					*dot = '.';
+				else {
+					sc_pe_unlock(pe);
+					pe = NULL;
+				}
 			}
+			resume_intr();
 		}
 	}
 	else
 	{
 		ERROR("syscall_handler with num=%hx >= MAX_NUM_OF_SYSTEM_CALLS", num);
 	}
-
-	// End
-	resume_intr();
 
 	// Do actual syscall
 	uint64_t res = syscall(r3, r4, r5, r6, r7, r8, r9, r10);

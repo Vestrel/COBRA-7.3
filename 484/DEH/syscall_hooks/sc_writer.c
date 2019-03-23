@@ -72,16 +72,8 @@ void default_syscall_printer(sc_pool_elmnt_t *pe)
 {
 	syscall_info_t *info = pe->info;
 
-	// Prepare variables
-	char *nm   = info->name;
-	char *proc = "?";
-	
-	sc_pe_next_str(pe, &proc, NULL);
-	//uint64_t thr = 0;//(uint64_t)pe->thr;
-
 	// Prepare buffer
 	char scratch[SCRATCH_BUF_LEN];
-
 	#ifdef USE_ACC_BUF
 		int len = 0;
 		#define SC_PRINTF(fmt, ...) SC_ACC_PRINTF(scratch, SCRATCH_BUF_LEN, len, fmt, ##__VA_ARGS__ )
@@ -89,21 +81,51 @@ void default_syscall_printer(sc_pool_elmnt_t *pe)
 		#define SC_PRINTF(fmt, ...) SC_IND_SNPRINTF(scratch, SCRATCH_BUF_LEN, fmt, ##__VA_ARGS__ )
 	#endif
 
-	// Print
-	SC_PRINTF("%d> %s %d %s(", pe->uid, proc, info->num, nm);
+	// Prepare variables
+	#ifndef SC_LOG_MINIMUM
+		char *nm   = info->name;
+		char *proc_nm = "?";
+		char *thrd_nm = "?";
 
+		sc_pe_next_str(pe, &proc_nm, NULL);
+		sc_pe_next_str(pe, &thrd_nm, NULL);
+	#endif
+
+	// Print Header
+	#ifdef SC_LOG_MINIMUM
+		SC_PRINTF("%u(%hhu)> [%x,%x] %hd ", pe->uid, pe->hwt, pe->pid, pe->tid, info->num);
+	#else
+		SC_PRINTF("%u(%hhu)> [%x:%s,%x:%s] %hd %s(", pe->uid, pe->hwt, pe->pid, proc_nm, pe->tid, thrd_nm, info->num, nm);
+	#endif
+	
+	// Print args
 	uint16_t nargs = info->nargs;
 	for(uint16_t i = 0; i < nargs; i++) {
-		if(i > 0)
-			SC_PRINTF(", ");
+		#ifdef SC_LOG_MINIMUM
+			SC_PRINTF("%lx ", pe->args[i]);
+		#else
+			if(i > 0)
+				SC_PRINTF(", ");
 
-		SC_PRINTF(info->arg_fmt[i], pe->args[i]);
+			SC_PRINTF(info->arg_fmt[i], pe->args[i]);
+		#endif
 	}
 
-	if(pe->has_res)
-		SC_PRINTF(") -> 0x%lx\n", pe->res);
-	else
-		SC_PRINTF(")\n");
+	// Print footer
+	if(pe->has_res) {
+		#ifdef SC_LOG_MINIMUM
+			SC_PRINTF("-> %lx\n", pe->res);
+		#else
+			SC_PRINTF(") -> 0x%lx\n", pe->res);
+		#endif
+	}
+	else {
+		#ifdef SC_LOG_MINIMUM
+			SC_PRINTF("-> ?\n");
+		#else
+			SC_PRINTF(") -> ?\n");
+		#endif
+	}
 
 	#ifdef USE_ACC_BUF
 		sc_write(scratch, 0);
@@ -111,30 +133,22 @@ void default_syscall_printer(sc_pool_elmnt_t *pe)
 }
 
 static INLINE void on_syscall(sc_pool_elmnt_t *pe) {
-	// Prepare missing information
-	//syscall_info_t *info = pe->info;
-
-	// TODO: writer_cb
-
-	/*char *proc = get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL";
-
-	if(strncmp(proc, "_main_", 6) == 0)
-		proc += 6;
-	sc->proc = proc;*/
-
-	//sc->thr  = get_current_thread();
-
-	//char buf[1024];
-	//snprintf(buf, 1024, "sc %hx\n", info->num);
-	//sc_write(buf, 0);
-
-	// Trigger callback (if exists)
-	//sci_callback *cb = sc->info->cb;
-	//if(cb && cb(sc))
-	//	return;
+	#ifndef SC_WRITER_NO_CALLBACKS
+		// Trigger pre-writer callback (if it exists)
+		sc_callback *cb = pe->info->pre_writer_cb;
+		if(cb && cb(pe) != 0)
+			return;
+	#endif
 
 	// Default printer
 	default_syscall_printer(pe);
+	
+	#ifndef SC_WRITER_NO_CALLBACKS
+		// Trigger post-writer callback (if it exists)
+		cb = pe->info->post_writer_cb;
+		if(cb)
+			cb(pe);
+	#endif
 }
 
 
@@ -170,8 +184,8 @@ static void sc_writer_thread_main(uint64_t arg) {
 				sc_pe_restart(pe);
 				on_syscall(pe);
 
-				// Mark no longer in use
-				pe->in_use = 0;
+				// Unlock
+				sc_pe_unlock(pe);
 			}
 			else {
 				ERROR("sc_writer: pe->in_use=0!");
@@ -198,6 +212,7 @@ static void sc_writer_thread_main(uint64_t arg) {
  */
 int init_syscall_writer(void) {
 	// Event queue & port for inter-thread communication
+	// TODO: Maybe implement a custom queue? This one can't be larger than 127...
 	int err = event_queue_create(&sc_evq, SYNC_PRIORITY, /*event_queue_key*/ 1, /*size 1-127*/ SC_WRITER_QUEUE_SIZE );
 	if(err != 0) {
 		ERROR("Could not initialize sc_evq (err=%x)", err);
@@ -246,15 +261,23 @@ int init_syscall_writer(void) {
 void sc_send_string(char *buf, int do_free) {
 	int err = event_port_send(sc_evp, (uint64_t)buf, (uint64_t)SC_STRING, (uint64_t)do_free);
 
-	if(err != 0 && err != EBUSY)
+	if(err != 0
+#ifndef SC_POOL_LOCKING
+		&& err != EBUSY
+#endif
+	)
 		ERROR("Could not submit to event_port (err=%x)", err);
 }
 
 void sc_send_pool_elmnt(sc_pool_elmnt_t *pe) {
 	int err = event_port_send(sc_evp, (uint64_t)pe, (uint64_t)SC_POOL_ELMNT, 0);
 
-	if(err != 0 && err != EBUSY) {
+	if(err != 0
+#ifndef SC_POOL_LOCKING
+		&& err != EBUSY
+#endif
+	) {
 		ERROR("Could not submit to event_port (err=%x)", err);
-		pe->in_use = 0;
+		sc_pe_unlock(pe);
 	}
 }

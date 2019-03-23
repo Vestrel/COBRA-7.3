@@ -80,7 +80,7 @@ ret _##name args
 
 #define LV2_CALLBACK LV2_CONTEXT
 
-static INLINE void *mfsprg0()
+static INLINE void *mfsprg0(void)
 {
 	uint64_t ret; 
 	__asm__ __volatile__("mfsprg0 %0\n\t" : "=r"(ret));

@@ -13,6 +13,13 @@
 // Define to use a single accumulative buffer - faster (less I/O ops), but may truncate output
 #define USE_ACC_BUF
 
+// Minimum log size - will only trace the most important things
+//#define SC_LOG_MINIMUM
+
+// Disable writer callback
+//#define SC_WRITER_NO_CALLBACKS
+
+// Helper macros
 #define SC_IND_SNPRINTF(buf, len, fmt, ...) do { \
 	uint64_t __wrlen = (uint64_t)snprintf(buf, len, fmt, ## __VA_ARGS__ ); \
 	if(__wrlen >= len) { \

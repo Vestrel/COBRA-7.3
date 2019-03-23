@@ -24,13 +24,6 @@ get_current_thread:
 	ld	%r3, 0x40(%r4)
 	blr
 
-.global get_current_thread_name
-get_current_thread_name:
-
-	mfsprg0 %r3
-	blr
-	
-
 .global get_thread_obj
 get_thread_obj:
 
