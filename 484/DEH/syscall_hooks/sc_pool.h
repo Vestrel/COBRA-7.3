@@ -69,6 +69,8 @@ HEADER_PE_INT(i32, int32_t);
 HEADER_PE_INT(i64, int64_t);
 #undef HEADER_PE_INT
 
+extern void* sc_pe_get_next_pos(sc_pool_elmnt_t *pe);
+
 extern sc_pe_ret_e sc_pe_next(sc_pool_elmnt_t *pe, void **out, uint16_t *len);
 extern sc_pe_ret_e sc_pe_add(sc_pool_elmnt_t *pe, void *in, uint16_t len);
 

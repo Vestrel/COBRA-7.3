@@ -20,7 +20,7 @@
 /*
  * Helper methods
  */
-static void sc_add_process_and_thread_info(sc_pool_elmnt_t *pe) {
+static void sc_add_process_and_thread_info(sc_pool_elmnt_t *pe, char **out_proc_nm, char **out_thrd_nm) {
 	// HWT
 	pe->hwt = get_HW_cur()->id;
 
@@ -60,6 +60,7 @@ static void sc_add_process_and_thread_info(sc_pool_elmnt_t *pe) {
 				dot = NULL;
 
 			// Submit
+			*out_proc_nm = proc_nm;
 			sc_pe_add_str(pe, proc_nm);
 
 			// Add the '.' back
@@ -83,6 +84,7 @@ static void sc_add_process_and_thread_info(sc_pool_elmnt_t *pe) {
 
 		#ifndef SC_LOG_MINIMUM
 			if(orig_proc_nm != NULL && strcmp(tobj->name, orig_proc_nm) == 0) {
+				*out_thrd_nm = "MAIN";
 				sc_pe_add_str(pe, "MAIN");
 			}
 			else {
@@ -92,12 +94,18 @@ static void sc_add_process_and_thread_info(sc_pool_elmnt_t *pe) {
 				// Remove the ID if it matches the process name
 				if(orig_proc_nm != NULL && strncmp(thrd_nm, orig_proc_nm, 8) == 0)
 					thrd_nm = thrd_nm + 8;
+				
+				// Remove the "_" (if present)
+				if(thrd_nm[0] == '_')
+					thrd_nm += 1;
 
-				// Remove the "_main_"
-				if(strncmp(thrd_nm, "_main_", 6) == 0)
-					thrd_nm += 6;
+				// Remove the "_main_" (if present)
+				if(strncmp(thrd_nm, "main_", 5) == 0)
+					thrd_nm += 5;
 
-				sc_pe_add_str(pe, tobj->name);
+				// Submit
+				*out_thrd_nm = thrd_nm;
+				sc_pe_add_str(pe, thrd_nm);
 			}
 		#endif
 	}
@@ -121,29 +129,14 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 	func.toc = (void *)MKA(TOC);
 
 	uint64_t (* syscall)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t) = (void *)&func;
-	
-	//thread_obj_t *tobj = get_thread_obj();
-	//uint64_t flag2 = *(uint64_t*)((void*)tobj + 0x94);
-
-	// Call original syscall and store result
-	
-	//uint64_t flag2 = *(uint64_t*)((void*)tobj + 0x94);
-	
-	/*if(!(flag2 & ((1ul << 63) >> 25)))
-		extend_kstack(0);
-	else
-	{
-		//INFO("flag2= %lx vs %lx", flag2, newflag2);
-	}*/
-
-	sc_pool_elmnt_t *pe = NULL;
-	uint32_t pe_uid = 0;
 
 	// Trace the syscall
+	sc_pool_elmnt_t *pe = NULL;
+	uint32_t pe_uid = 0;
 	if(num < MAX_NUM_OF_SYSTEM_CALLS) {
-		syscall_info_t *info = get_syscall_info(num);
+		syscall_info_t *info = sci_get_sc(num);
 		
-		if(info->trace) {
+		if(info->trace && (info->group == NULL || info->group->trace)) {
 			pe = sc_pool_get_elmnt();
 			suspend_intr();
 			if(pe != NULL) {
@@ -165,14 +158,27 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 				pe->args[7] = r10;
 
 				// Process/Thread information
-				sc_add_process_and_thread_info(pe);
+				char *proc_nm = NULL;
+				char *thrd_nm = NULL;
+				sc_add_process_and_thread_info(pe, &proc_nm, &thrd_nm);
 
-				//Callback
+				// Callbacks / Filtering
 				int skip = 0;
+
+				if(proc_nm != NULL && thrd_nm != NULL) {
+					if(strcmp(proc_nm, "vsh.self") == 0) {
+						skip |= strcmp(thrd_nm, "aud_SERIAL" ) == 0 ||
+						        strcmp(thrd_nm, "aud_BS"     ) == 0 ||
+						        strcmp(thrd_nm, "SceVshPower") == 0;
+					}
+				}
+
 				#ifndef SC_HANDLER_NO_CALLBACKS
-					sc_callback *cb = info->prepare_cb;
-					if(cb && cb(pe) != 0)
-						skip = 1;
+					if(!skip) {
+						sc_handler_callback *cb = info->prepare_cb;
+						if(cb && cb(pe, proc_nm, thrd_nm) != 0)
+							skip = 1;
+					}
 				#endif
 
 				// Submit parameters

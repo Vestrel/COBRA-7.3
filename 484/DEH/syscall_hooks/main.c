@@ -10,6 +10,7 @@
 #include "sc_pool.h"
 #include "sc_handler.h"
 #include "sc_info.h"
+#include "sys_hid.h"
 
 
 /*
@@ -21,7 +22,10 @@ void main(void)
 
 	if(init_syscall_info() != 0)
 		return;
-	
+
+	if(sc_sys_hid_init() != 0)
+		return;
+
 	if(init_syscall_pool() != 0)
 		return;
 	

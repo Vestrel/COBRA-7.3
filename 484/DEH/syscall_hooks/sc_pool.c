@@ -133,6 +133,10 @@ DECL_PE_INT(i16, int16_t);
 DECL_PE_INT(i32, int32_t);
 DECL_PE_INT(i64, int64_t);
 
+void* sc_pe_get_next_pos(sc_pool_elmnt_t *pe) {
+	return (void*)(pe->buf_pos + sizeof(uint16_t));
+}
+
 sc_pe_ret_e sc_pe_next(sc_pool_elmnt_t *pe, void **out, uint16_t *len) {
 	uint16_t _len;
 	PE_CHECK_ERROR(sc_pe_next_u16(pe, &_len));

@@ -10,8 +10,12 @@
 #include "sc_writer.h"
 #include "utilities.h"
 
-
+/*
+ * Variables
+ */
 syscall_info_t *syscall_info;
+
+static syscall_group_id_t next_group_id;
 
 /* 
  * Initial syscall information
@@ -463,7 +467,7 @@ static int init_syscall_names(void)
 	BIND_FUNC(sys_hid_manager_check_focus)                 //510 (0x1FE)
 	BIND_FUNC(sys_hid_manager_set_master_process) //511 (0x1FF)  ROOT
 	BIND_FUNC(sys_hid_manager_is_process_permission_root)  //512 (0x200)  ROOT
-	null_func//BIND_FUNC(sys_hid_manager_...)              //513 (0x201)
+	BIND_FUNC(sys_hid_manager_513)                         //513 (0x201)
 	BIND_FUNC(sys_hid_manager_514)                         //514 (0x202)
 	uns_func                                               //515 (0x203)  UNS
 	BIND_FUNC(sys_config_open)                             //516 (0x204)
@@ -884,9 +888,11 @@ int init_syscall_info(void) {
 		return -2;
 	}
 
+	next_group_id = 0;
+
 	// Initialize syscall info at runtime */
 	for(uint16_t i = 0; i < MAX_NUM_OF_SYSTEM_CALLS; i++) {
-		syscall_info_t *info = &(syscall_info[i]);
+		syscall_info_t *info = sci_get_sc(i);
 
 		// Basic information
 		info->num = i;
@@ -895,10 +901,13 @@ int init_syscall_info(void) {
 		// Trace enable
 		info->trace = 1;
 
+		// Group
+		info->group = NULL;
+
 		// Callbacks
-		info->prepare_cb = (sc_callback*)NULL;
-		info->pre_writer_cb = (sc_callback*)NULL;
-		info->post_writer_cb = (sc_callback*)NULL;
+		info->prepare_cb = (sc_handler_callback*)NULL;
+		info->pre_write_cb = (sc_writer_callback*)NULL;
+		info->post_write_cb = (sc_writer_callback*)NULL;
 
 		// Arguments
 		#define ARG_FMT(x) info->arg_fmt[x] = "arg" #x "=0x%1lx"
@@ -912,41 +921,131 @@ int init_syscall_info(void) {
 		ARG_FMT(7);
 	}
 
-	// Specific syscalls (TODO: Move interesting ones to separate files)
-	/*syscall_info[SYS_COND_SIGNAL                   ].nargs = 1;
-	syscall_info[SYS_MEMORY_ALLOCATE               ].nargs = 1;
-	syscall_info[SYS_LWMUTEX_LOCK                  ].nargs = 2;
-	syscall_info[SYS_LWMUTEX_UNLOCK                ].nargs = 1;
-	syscall_info[SYS_MEMORY_GET_PAGE_ATTRIBUTE     ].nargs = 2;
-	syscall_info[SYS_NET_INFOCTL                   ].nargs = 2;
-	syscall_info[SYS_NET_ABORT                     ].nargs = 3;
-	syscall_info[SYS_NET_IOCTL                     ].nargs = 3;
-	syscall_info[SYS_HID_MANAGER_READ              ].nargs = 4;
-	syscall_info[SYS_HID_MANAGER_IOCTL             ].nargs = 4;
-	syscall_info[SYS_HID_MANAGER_514               ].nargs = 3;
-	syscall_info[SYS_HID_MANAGER_CHECK_FOCUS       ].nargs = 0;
-	syscall_info[_SYS_PRX_START_MODULE             ].nargs = 6;
-	syscall_info[SYS_LWCOND_SIGNAL                 ].nargs = 1;
-	syscall_info[SYS_EVENT_QUEUE_DRAIN             ].nargs = 1;
-	syscall_info[SYS_NET_SHUTDOWN                  ].nargs = 2;
-	syscall_info[SYS_PPU_THREAD_CREATE             ].nargs = 8;
-	syscall_info[SYS_PPU_THREAD_RENAME             ].nargs = 2;
-	syscall_info[SYS_NET_SOCKET                    ].nargs = 3;
-	syscall_info[SYS_NET_CLOSE                     ].nargs = 1;
-	syscall_info[SYS_NET_SYSCTL                    ].nargs = 6;
-	syscall_info[SYS_NET_SENDTO                    ].nargs = 6;
-	syscall_info[SYS_NET_CONTROL                   ].nargs = 4;
-	syscall_info[SYS_CELLFSLSEEK                   ].nargs = 4;
-	syscall_info[SYS_MEMORY_ALLOCATE_FROM_CONTAINER].nargs = 4;
-	syscall_info[SYS_COND_WAIT                     ].nargs = 2;*/
-
-	//syscall_info[817 /* sys_fs_fcntl */            ].trace = 0;
+	// Groups
+	SCI_CREATE_GROUP(sys_semaphore, 0);
+	SCI_CREATE_GROUP(sys_lwmutex, 0);
+	SCI_CREATE_GROUP(sys_mutex, 0);
+	SCI_CREATE_GROUP(sys_cond, 0);
+	SCI_CREATE_GROUP(sys_lwcond, 0);
+	SCI_CREATE_GROUP(sys_rwlock, 0);
+	SCI_CREATE_GROUP(sys_event, 0);
+	SCI_CREATE_GROUP(sys_net, 0);
+	SCI_CREATE_GROUP(sys_fs, 0);
+	SCI_CREATE_GROUP(sys_time_, 0);
+	SCI_CREATE_GROUP(sys_timer, 0);
 
 	return 0;
 }
 
 
-syscall_info_t *get_syscall_info(uint16_t num)
+syscall_info_t *sci_get_sc(uint16_t num)
 {
 	return &(syscall_info[num]);
+}
+
+syscall_info_t *sci_get_sc_by_name(char *nm) {
+	for(uint16_t i = 0; i < MAX_NUM_OF_SYSTEM_CALLS; i++) {
+		syscall_info_t *info = sci_get_sc(i);
+
+		if(strcmp(info->name, nm) != 0)
+			continue;
+
+		return info;
+	}
+
+	return NULL;
+}
+
+syscall_group_t* sci_create_group(char *nm) {
+	syscall_group_t *group = sci_find_group(nm);
+
+	if(group != NULL)
+		return group;
+
+	group = (syscall_group_t*)malloc(sizeof(syscall_group_t));
+	if(group == NULL) {
+		ERROR("Could not allocate a syscall_group_t object for '%s'", nm);
+		return NULL;
+	}
+
+	group->id = next_group_id++;
+	group->name = nm;
+	group->trace = 1;
+
+	return group;
+}
+
+syscall_group_t* sci_find_group(char *nm) {
+	for(uint16_t i = 0; i < MAX_NUM_OF_SYSTEM_CALLS; i++) {
+		syscall_info_t *info = sci_get_sc(i);
+
+		if(info->group == NULL)
+			continue;
+
+		if(strcmp(info->group->name, nm) != 0)
+			continue;
+
+		return info->group;
+	}
+
+	return NULL;
+}
+
+void sci_add_to_group(syscall_group_t* group, uint16_t sc) {
+	sci_get_sc(sc)->group = group;
+}
+
+void sci_add_range_to_group(syscall_group_t* group, uint16_t sc_start, uint16_t sc_end) {
+	if(sc_start > sc_end) {
+		ERROR("sci_add_range_to_group: sc_start=%hu > sc_end=%hu", sc_start, sc_end);
+		return;
+	}
+
+	for(uint16_t i = sc_start; i <= sc_end; i++) {
+		syscall_info_t *info = sci_get_sc(i);
+
+		info->group = group;
+	}
+}
+
+void sci_trace_group(syscall_group_t* group, uint8_t trace) {
+	group->trace = trace;
+}
+
+void sci_trace(uint16_t sc, uint8_t trace) {
+	sci_get_sc(sc)->trace = trace;
+}
+
+void sci_trace_range(uint16_t sc_start, uint16_t sc_end, uint8_t trace) {
+	if(sc_start > sc_end) {
+		ERROR("sci_trace_range: sc_start=%hu > sc_end=%hu", sc_start, sc_end);
+		return;
+	}
+
+	for(uint16_t i = sc_start; i <= sc_end; i++) {
+		syscall_info_t *info = sci_get_sc(i);
+
+		info->trace = trace;
+	}
+}
+
+void sci_add_prefix_to_group(syscall_group_t *group, char *prefix) {
+	int prefix_len = strlen(prefix);
+
+	if(prefix_len == 0) {
+		ERROR("sci_add_prefix_to_group: strlen(prefix) == 0");
+		return;
+	}
+
+	for(uint16_t i = 0; i < MAX_NUM_OF_SYSTEM_CALLS; i++) {
+		syscall_info_t *info = sci_get_sc(i);
+
+		char *name = info->name;
+
+		if(name[0] == '_' && prefix[0] != '_')
+			name += 1;
+
+		if(strncmp(name, prefix, prefix_len) == 0)
+			info->group = group;
+	}
 }

@@ -39,20 +39,59 @@ static event_port_t sc_evp;
 
 static thread_t sc_writer_thread;
 static int sc_fd;
+static int hdd0_mounted;
 
 
 /*
  * File Handling
  */
+static int sc_writer_open_log(void) {
+	int err = cellFsOpen(SC_WRITER_FILE, CELL_FS_O_WRONLY | CELL_FS_O_CREAT | CELL_FS_O_TRUNC, &sc_fd, 0666, NULL, 0);
+	if(err) {
+		ERROR("Could not open/create syscall log file '" SC_WRITER_FILE "' (err=%x).", err);
+		return -1;
+	}
+	if(!sc_fd) {
+		ERROR("Could not open/create syscall log file '" SC_WRITER_FILE "' (fd==0).");
+		return -2;
+	}
+
+	return 0;
+}
+
+#ifdef SC_HOOK_MOUNT
+LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_8(int, sc_writer_post_cellFsUtilMount, (const char *block_dev, const char *filesystem, const char *mount_point, int unk, int read_only, int unk2, char *argv[], int argc))
+{
+	/*INFO("cellFsUtilMount(blk_dev='%s', fs='%s', mount='%s', unk=%d, ro=%d, unk2=%d, argv=%lx, argc=%d)", block_dev, filesystem, mount_point, unk, read_only, unk2, (uint64_t)argv, argc);
+	for(int i = 0; i < argc; i++) {
+		INFO("\targv[i] = '%s'", argv[i]);
+	}*/
+
+	if (!hdd0_mounted && strcmp(mount_point, "/dev_hdd0") == 0 && strcmp(filesystem, "CELL_FS_UFS") == 0) {
+		hdd0_mounted = 1;
+
+		INFO("HDD0 mounted! Switching to log file...");
+		sc_writer_open_log();
+	}
+	
+	return 0;
+}
+#endif
+
 void sc_write(char *buf, uint64_t size) {
 	#ifndef SC_LOG_TO_FILE
 		lv2_printf(buf);
 		return;
-
 	#else
+
 		if(!sc_fd) {
-			ERROR("sc_write->sc_fd==0! Stopping syscall logging.");
-			ppu_thread_exit(1);
+			#ifdef SC_HOOK_MOUNT
+				lv2_printf("SCH LV2: %s", buf);
+				return;
+			#else
+				ERROR("sc_write->sc_fd==0! Stopping syscall logging.");
+				ppu_thread_exit(1);
+			#endif
 		}
 
 		if(size == 0)
@@ -78,13 +117,7 @@ void default_syscall_printer(sc_pool_elmnt_t *pe)
 	syscall_info_t *info = pe->info;
 
 	// Prepare buffer
-	char scratch[SCRATCH_BUF_LEN];
-	#ifdef USE_ACC_BUF
-		int len = 0;
-		#define SC_PRINTF(fmt, ...) SC_ACC_PRINTF(scratch, SCRATCH_BUF_LEN, len, fmt, ##__VA_ARGS__ )
-	#else
-		#define SC_PRINTF(fmt, ...) SC_IND_SNPRINTF(scratch, SCRATCH_BUF_LEN, fmt, ##__VA_ARGS__ )
-	#endif
+	SCW_START
 
 	// Prepare variables
 	#ifndef SC_LOG_MINIMUM
@@ -98,49 +131,47 @@ void default_syscall_printer(sc_pool_elmnt_t *pe)
 
 	// Print Header
 	#ifdef SC_LOG_MINIMUM
-		SC_PRINTF("%u(%hhu)> [%x,%x] %hd ", pe->uid, pe->hwt, pe->pid, pe->tid, info->num);
+		SCW_PRINTF("%u(%hhu)> [%x,%x] %hd ", pe->uid, pe->hwt, pe->pid, pe->tid, info->num);
 	#else
-		SC_PRINTF("%u(%hhu)> [PID=%x '%s'; TID=%x '%s'] %hd %s(", pe->uid, pe->hwt, pe->pid, proc_nm, pe->tid, thrd_nm, info->num, nm);
+		SCW_PRINTF("%u(%hhu)> [PID=%x '%s'; TID=%x '%s'] %hd %s(", pe->uid, pe->hwt, pe->pid, proc_nm, pe->tid, thrd_nm, info->num, nm);
 	#endif
 	
 	// Print args
 	uint16_t nargs = info->nargs;
 	for(uint16_t i = 0; i < nargs; i++) {
 		#ifdef SC_LOG_MINIMUM
-			SC_PRINTF("%lx ", pe->args[i]);
+			SCW_PRINTF("%lx ", pe->args[i]);
 		#else
 			if(i > 0)
-				SC_PRINTF(", ");
+				SCW_PRINTF(", ");
 
-			SC_PRINTF(info->arg_fmt[i], pe->args[i]);
+			SCW_PRINTF(info->arg_fmt[i], pe->args[i]);
 		#endif
 	}
 
 	// Print footer
 	if(pe->has_res) {
 		#ifdef SC_LOG_MINIMUM
-			SC_PRINTF("-> %lx\n", pe->res);
+			SCW_PRINTF("-> %lx\n", pe->res);
 		#else
-			SC_PRINTF(") -> 0x%lx\n", pe->res);
+			SCW_PRINTF(") -> 0x%lx\n", pe->res);
 		#endif
 	}
 	else {
 		#ifdef SC_LOG_MINIMUM
-			SC_PRINTF("-> ?\n");
+			SCW_PRINTF("-> ?\n");
 		#else
-			SC_PRINTF(") -> ?\n");
+			SCW_PRINTF(") -> ?\n");
 		#endif
 	}
 
-	#ifdef USE_ACC_BUF
-		sc_write(scratch, 0);
-	#endif
+	SCW_FINISH
 }
 
 static INLINE void on_syscall(sc_pool_elmnt_t *pe) {
 	#ifndef SC_WRITER_NO_CALLBACKS
 		// Trigger pre-writer callback (if it exists)
-		sc_callback *cb = pe->info->pre_writer_cb;
+		sc_writer_callback *cb = pe->info->pre_write_cb;
 		if(cb && cb(pe) != 0)
 			return;
 	#endif
@@ -150,7 +181,7 @@ static INLINE void on_syscall(sc_pool_elmnt_t *pe) {
 	
 	#ifndef SC_WRITER_NO_CALLBACKS
 		// Trigger post-writer callback (if it exists)
-		cb = pe->info->post_writer_cb;
+		cb = pe->info->post_write_cb;
 		if(cb)
 			cb(pe);
 	#endif
@@ -236,18 +267,19 @@ int init_syscall_writer(void) {
 		return -3;
 	}
 
-	// Open log file
+	// Initialize log file
 	sc_fd = 0;
-	#ifdef SC_LOG_TO_FILE
-		err = cellFsOpen(SC_WRITER_FILE, CELL_FS_O_WRONLY | CELL_FS_O_CREAT | CELL_FS_O_TRUNC, &sc_fd, 0666, NULL, 0);
-		if(err) {
-			ERROR("Could not open/create syscall log file '" SC_WRITER_FILE "' (err=%x).", err);
-			return -4;
-		}
-		if(!sc_fd) {
-			ERROR("Could not open/create syscall log file '" SC_WRITER_FILE "' (fd==0).");
-			return -5;
-		}
+	hdd0_mounted = 0;
+	#ifndef SC_HOOK_MOUNT
+		#ifdef SC_LOG_TO_FILE 
+			if(!sc_writer_open_log()) {
+				return -4;
+			}
+		#endif
+	#else
+		// Unhook cellFsUtilMount (restore original instruction at cellFsUtilMount_symbol) and then re-hook
+		*(uint32_t *)MKA(cellFsUtilMount_symbol) = 0xF821FED1;
+		hook_function_on_precall_success(cellFsUtilMount_symbol, sc_writer_post_cellFsUtilMount, 8);
 	#endif
 
 	// Create writer thread

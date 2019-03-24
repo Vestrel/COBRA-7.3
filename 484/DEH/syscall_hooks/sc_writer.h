@@ -7,8 +7,8 @@
  * Defines
  */
 
-// Length of the scratch buffer for the default printer
-#define SCRATCH_BUF_LEN 2048
+// Length of the scratch buffer
+#define SCW_SCRATCH_BUF_LEN 2048
 
 // Define to use a single accumulative buffer - faster (less I/O ops), but may truncate output
 #define USE_ACC_BUF
@@ -19,11 +19,14 @@
 // Log to file
 #define SC_LOG_TO_FILE
 
+// Hook cellFsUtilMount to detect hdd0 being mounted
+#define SC_HOOK_MOUNT
+
 // Disable writer callback
 //#define SC_WRITER_NO_CALLBACKS
 
 // Helper macros
-#define SC_IND_SNPRINTF(buf, len, fmt, ...) do { \
+#define SCW_IND_SNPRINTF(buf, len, fmt, ...) do { \
 	uint64_t __wrlen = (uint64_t)snprintf(buf, len, fmt, ## __VA_ARGS__ ); \
 	if(__wrlen >= len) { \
 		WARN("SC_SNPRINTF - buffer size=%lx too small, needed %lx", (uint64_t)len, __wrlen+1); \
@@ -32,12 +35,12 @@
 	sc_write(buf, __wrlen); \
 } while(0)
 
-#define SC_IND_NPRINTF(max_len, fmt, ...) do { \
+#define SCW_IND_NPRINTF(max_len, fmt, ...) do { \
 	char __sc_buf[max_len]; \
 	SC_IND_SNPRINTF(__sc_buf, max_len, fmt, ## __VA_ARGS__ ); \
 } while(0)
 
-#define SC_ACC_PRINTF(buf, buf_len, cur_len, fmt, ...) do { \
+#define SCW_ACC_PRINTF(buf, buf_len, cur_len, fmt, ...) do { \
 	int __remaining = buf_len - cur_len - 1; \
 	if(__remaining > 0) { \
 		char *__cur = buf + cur_len; \
@@ -46,6 +49,34 @@
 			cur_len = buf_len-1; \
 	} \
 } while(0)
+
+#define _SCW_DUMP(dst, src, len) do { \
+		uint8_t *__mem8 = (uint8_t*)(src); \
+		char *__dst = (char*)(dst); \
+		\
+		uint32_t __i; \
+		for(__i = 0; __i < len; __i++) { \
+			__dst += lv2_sprintf(__dst, "%02x", *__mem8); \
+			__mem8 += 1; \
+		} \
+		scw_len += __i * 2; \
+	} while(0)
+
+
+#ifdef USE_ACC_BUF
+	#define SCW_START \
+		char scw_scratch[SCW_SCRATCH_BUF_LEN]; \
+		int scw_len = 0;
+	#define SCW_PRINTF(fmt, ...) SCW_ACC_PRINTF(scw_scratch, SCW_SCRATCH_BUF_LEN, scw_len, fmt, ##__VA_ARGS__ )
+	#define SCW_DUMP(src, len) _SCW_DUMP(scw_scratch + scw_len, src, len)
+	#define SCW_FINISH sc_write(scw_scratch, 0);
+#else
+	#define SCW_START \
+		char scw_scratch[SCW_SCRATCH_BUF_LEN];
+	#define SCW_PRINTF(fmt, ...) SCW_IND_SNPRINTF(scw_scratch, SCW_SCRATCH_BUF_LEN, fmt, ##__VA_ARGS__ )
+	#define SCW_DUMP(src, len) _SCW_DUMP(scw_scratch, src, len)
+	#define SCW_FINISH
+#endif
 
 /*
  * Methods
