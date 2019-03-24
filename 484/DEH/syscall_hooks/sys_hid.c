@@ -26,7 +26,7 @@ SCI_CB_DUMP_BUFFER(sys_hid_manager_read, 3, 4)
 
 
 int sc_sys_hid_init(void) {
-	SCI_CREATE_GROUP(sys_hid, 1);
+	SCI_CREATE_GROUP(sys_hid, SCT_DEFAULT);
 
 	SCI_FROM_NAME(sys_hid_manager_open)
 	sys_hid_manager_open->nargs = 3;
@@ -35,15 +35,15 @@ int sc_sys_hid_init(void) {
 	sys_hid_manager_open->arg_fmt[2] = "handle=0x%lx";
 
 	SCI_FROM_NAME(sys_hid_manager_add_hot_key_observer)
-	sys_hid_manager_open->nargs = 2;
-	sys_hid_manager_open->arg_fmt[0] = "event_queue=0x%lx";
-	sys_hid_manager_open->arg_fmt[1] = "unk=*0x%lx";
+	sys_hid_manager_add_hot_key_observer->nargs = 2;
+	sys_hid_manager_add_hot_key_observer->arg_fmt[0] = "event_queue=0x%lx";
+	sys_hid_manager_add_hot_key_observer->arg_fmt[1] = "unk=*0x%lx";
 
 	SCI_FROM_NAME(sys_hid_manager_check_focus)
-	sys_hid_manager_open->nargs = 0;
+	sys_hid_manager_check_focus->nargs = 0;
 
 	SCI_FROM_NAME(sys_hid_manager_is_process_permission_root)
-	sys_hid_manager_open->nargs = 0;
+	sys_hid_manager_is_process_permission_root->nargs = 0;
 
 	SCI_FROM_NAME(sys_hid_manager_ioctl)
 	SCI_REGISTER_CBS(sys_hid_manager_ioctl)

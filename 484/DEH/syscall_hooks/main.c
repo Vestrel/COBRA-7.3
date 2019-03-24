@@ -11,6 +11,7 @@
 #include "sc_handler.h"
 #include "sc_info.h"
 #include "sys_hid.h"
+#include "sys_config.h"
 
 
 /*
@@ -24,6 +25,9 @@ void main(void)
 		return;
 
 	if(sc_sys_hid_init() != 0)
+		return;
+
+	if(sc_sys_config_init() != 0)
 		return;
 
 	if(init_syscall_pool() != 0)
