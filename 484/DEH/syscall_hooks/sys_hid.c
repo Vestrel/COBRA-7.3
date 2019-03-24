@@ -52,6 +52,7 @@ int sc_sys_hid_init(void) {
 	sys_hid_manager_ioctl->arg_fmt[1] = "pkg_id=0x%lx";
 	sys_hid_manager_ioctl->arg_fmt[2] = "buf=*0x%lx";
 	sys_hid_manager_ioctl->arg_fmt[3] = "buf_size=%ld";
+	sys_hid_manager_ioctl->trace = SCT_TRACE_POST;
 
 	SCI_FROM_NAME(sys_hid_manager_513)
 	SCI_REGISTER_CBS(sys_hid_manager_513)
@@ -60,6 +61,7 @@ int sc_sys_hid_init(void) {
 	sys_hid_manager_513->arg_fmt[1] = "a2=0x%lx";
 	sys_hid_manager_513->arg_fmt[2] = "buf=*0x%lx";
 	sys_hid_manager_513->arg_fmt[3] = "buf_size=%ld";
+	sys_hid_manager_513->trace = SCT_TRACE_POST;
 
 	SCI_FROM_NAME(sys_hid_manager_514)
 	SCI_REGISTER_CBS(sys_hid_manager_514)
@@ -67,6 +69,7 @@ int sc_sys_hid_init(void) {
 	sys_hid_manager_514->arg_fmt[0] = "pkg_id=0x%lx";
 	sys_hid_manager_514->arg_fmt[1] = "buf=*0x%lx";
 	sys_hid_manager_514->arg_fmt[2] = "buf_size=%ld";
+	sys_hid_manager_514->trace = SCT_TRACE_POST;
 
 	SCI_FROM_NAME(sys_hid_manager_read)
 	SCI_REGISTER_CBS(sys_hid_manager_read)
@@ -75,6 +78,7 @@ int sc_sys_hid_init(void) {
 	sys_hid_manager_read->arg_fmt[1] = "pkg_id=0x%lx";
 	sys_hid_manager_read->arg_fmt[2] = "buf=*0x%lx";
 	sys_hid_manager_read->arg_fmt[3] = "buf_size=%ld";
+	sys_hid_manager_read->trace = SCT_TRACE_POST;
 
 	return 0;
 }

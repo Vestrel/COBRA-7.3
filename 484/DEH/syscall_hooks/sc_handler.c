@@ -133,10 +133,16 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 	// Trace the syscall
 	sc_pool_elmnt_t *pe = NULL;
 	uint32_t pe_uid = 0;
+	char *proc_nm = NULL;
+	char *thrd_nm = NULL;
+	syscall_info_t *info = NULL;
+	syscall_trace_e should_trace = SCT_DEFAULT;
+
 	if(num < MAX_NUM_OF_SYSTEM_CALLS) {
-		syscall_info_t *info = sci_get_sc(num);
+		info = sci_get_sc(num);
+		should_trace = sci_get_trace(info);
 		
-		if(info->trace && (info->group == NULL || info->group->trace)) {
+		if(should_trace != SCT_DONT_TRACE) {
 			pe = sc_pool_get_elmnt();
 			suspend_intr();
 			if(pe != NULL) {
@@ -158,8 +164,6 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 				pe->args[7] = r10;
 
 				// Process/Thread information
-				char *proc_nm = NULL;
-				char *thrd_nm = NULL;
 				sc_add_process_and_thread_info(pe, &proc_nm, &thrd_nm);
 
 				// Callbacks / Filtering
@@ -175,7 +179,7 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 
 				#ifndef SC_HANDLER_NO_CALLBACKS
 					if(!skip) {
-						sc_handler_callback *cb = info->prepare_cb;
+						sc_handler_callback *cb = info->precall_prepare_cb;
 						if(cb && cb(pe, proc_nm, thrd_nm) != 0)
 							skip = 1;
 					}
@@ -183,7 +187,8 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 
 				// Submit parameters
 				if(!skip) {
-					sc_send_pool_elmnt(pe);
+					if(should_trace != SCT_TRACE_POST)
+						sc_send_pool_elmnt(pe);
 				}
 				else {
 					sc_pe_unlock(pe);
@@ -205,6 +210,27 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 	if(pe != NULL && pe->uid == pe_uid) {
 		pe->res = res;
 		pe->has_res = 1;
+
+		if(should_trace == SCT_TRACE_POST) {
+			suspend_intr();
+			int skip = 0;
+
+			#ifndef SC_HANDLER_NO_CALLBACKS
+				sc_handler_callback *cb = info->postcall_prepare_cb;
+				if(cb && cb(pe, proc_nm, thrd_nm) != 0)
+					skip = 1;
+			#endif
+
+			// Submit parameters
+			if(!skip) {
+				sc_send_pool_elmnt(pe);
+			}
+			else {
+				sc_pe_unlock(pe);
+				pe = NULL;
+			}
+			resume_intr();
+		}
 	}
 
 	return res;

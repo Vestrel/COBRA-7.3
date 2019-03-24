@@ -50,16 +50,14 @@
 	} \
 } while(0)
 
-#define _SCW_DUMP(dst, src, len) do { \
-		uint8_t *__mem8 = (uint8_t*)(src); \
-		char *__dst = (char*)(dst); \
-		\
-		uint32_t __i; \
-		for(__i = 0; __i < len; __i++) { \
-			__dst += lv2_sprintf(__dst, "%02x", *__mem8); \
-			__mem8 += 1; \
-		} \
-		scw_len += __i * 2; \
+#define SCW_IND_DUMP(src, len) do { \
+		uint64_t __wrlen = sc_writer_dump_buffer(scw_scratch, SCW_SCRATCH_BUF_LEN, src, len); \
+		sc_write(scw_scratch, __wrlen); \
+	} while(0)
+
+#define SCW_ACC_DUMP(src, len) do { \
+		char *__cur = scw_scratch + scw_len; \
+		scw_len += sc_writer_dump_buffer(__cur, SCW_SCRATCH_BUF_LEN - scw_len, src, len); \
 	} while(0)
 
 
@@ -68,13 +66,13 @@
 		char scw_scratch[SCW_SCRATCH_BUF_LEN]; \
 		int scw_len = 0;
 	#define SCW_PRINTF(fmt, ...) SCW_ACC_PRINTF(scw_scratch, SCW_SCRATCH_BUF_LEN, scw_len, fmt, ##__VA_ARGS__ )
-	#define SCW_DUMP(src, len) _SCW_DUMP(scw_scratch + scw_len, src, len)
+	#define SCW_DUMP(src, len) SCW_ACC_DUMP(src, len)
 	#define SCW_FINISH sc_write(scw_scratch, 0);
 #else
 	#define SCW_START \
 		char scw_scratch[SCW_SCRATCH_BUF_LEN];
 	#define SCW_PRINTF(fmt, ...) SCW_IND_SNPRINTF(scw_scratch, SCW_SCRATCH_BUF_LEN, fmt, ##__VA_ARGS__ )
-	#define SCW_DUMP(src, len) _SCW_DUMP(scw_scratch, src, len)
+	#define SCW_DUMP(src, len) SCW_IND_DUMP(src, len)
 	#define SCW_FINISH
 #endif
 
@@ -85,6 +83,7 @@ extern int init_syscall_writer(void);
 //extern void default_syscall_printer(syscall_t *sc);
 
 extern void sc_write(char *buf, uint64_t size);
+extern int sc_writer_dump_buffer(char *dst, int dst_len, void *src, int src_len);
 
 extern void sc_send_string(char *buf, int do_free);
 extern void sc_send_pool_elmnt(sc_pool_elmnt_t *sc_pe);

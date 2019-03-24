@@ -109,6 +109,39 @@ void sc_write(char *buf, uint64_t size) {
 }
 
 
+int sc_writer_dump_buffer(char *dst, int dst_len, void *src, int src_len) {
+	// we need at least space for two hex digits plus the null terminator
+	if(dst_len < 3)
+		return 0;
+
+	uint8_t *src8 = (uint8_t*)src;
+
+	// If we overflow, reserve at least 3 characters
+	int overflow = 0;
+	int wr_len = src_len * 2 + 1;
+
+	if(wr_len > dst_len) {
+		overflow = 1;
+		wr_len = dst_len;
+	}
+
+	int i;
+	for(i = wr_len; i > 2; i -= 2) { \
+		dst += lv2_sprintf(dst, "%02x", *src8);
+		src8 += 1;
+	}
+
+	if(overflow) {
+		if(i <= 1)
+			dst -= 1;
+
+		*(dst++) = '?';
+		*(dst++) = '\0';
+	}
+
+	return wr_len - i;
+}
+
 /*
  * Handle syscalls
  */

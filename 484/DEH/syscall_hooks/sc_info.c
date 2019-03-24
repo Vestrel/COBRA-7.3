@@ -899,13 +899,14 @@ int init_syscall_info(void) {
 		info->nargs = 8;
 
 		// Trace enable
-		info->trace = 1;
+		info->trace = SCT_DEFAULT;
 
 		// Group
 		info->group = NULL;
 
 		// Callbacks
-		info->prepare_cb = (sc_handler_callback*)NULL;
+		info->precall_prepare_cb = (sc_handler_callback*)NULL;
+		info->postcall_prepare_cb = (sc_handler_callback*)NULL;
 		info->pre_write_cb = (sc_writer_callback*)NULL;
 		info->post_write_cb = (sc_writer_callback*)NULL;
 
@@ -922,17 +923,19 @@ int init_syscall_info(void) {
 	}
 
 	// Groups
-	SCI_CREATE_GROUP(sys_semaphore, 0);
-	SCI_CREATE_GROUP(sys_lwmutex, 0);
-	SCI_CREATE_GROUP(sys_mutex, 0);
-	SCI_CREATE_GROUP(sys_cond, 0);
-	SCI_CREATE_GROUP(sys_lwcond, 0);
-	SCI_CREATE_GROUP(sys_rwlock, 0);
-	SCI_CREATE_GROUP(sys_event, 0);
-	SCI_CREATE_GROUP(sys_net, 0);
-	SCI_CREATE_GROUP(sys_fs, 0);
-	SCI_CREATE_GROUP(sys_time_, 0);
-	SCI_CREATE_GROUP(sys_timer, 0);
+	SCI_CREATE_GROUP(sys_semaphore, SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_lwmutex  , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_mutex    , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_cond     , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_lwcond   , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_rwlock   , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_event    , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_net      , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_fs       , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_time_    , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_timer    , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_memory   , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_storage  , SCT_DONT_TRACE);
 
 	return 0;
 }
@@ -954,6 +957,22 @@ syscall_info_t *sci_get_sc_by_name(char *nm) {
 	}
 
 	return NULL;
+}
+
+syscall_trace_e sci_get_trace(syscall_info_t *info) {
+	syscall_trace_e sc_trace = info->trace;
+	syscall_trace_e gr_trace = (info->group != NULL) ? info->group->trace : SCT_DEFAULT;
+
+	if(sc_trace == SCT_DONT_TRACE || gr_trace == SCT_DONT_TRACE)
+		return SCT_DONT_TRACE;
+
+	if(sc_trace == SCT_DEFAULT && gr_trace == SCT_DEFAULT)
+		return SCT_TRACE_PRE;
+
+	if(sc_trace != SCT_DEFAULT)
+		return sc_trace;
+
+	return gr_trace;
 }
 
 syscall_group_t* sci_create_group(char *nm) {
@@ -1008,15 +1027,15 @@ void sci_add_range_to_group(syscall_group_t* group, uint16_t sc_start, uint16_t 
 	}
 }
 
-void sci_trace_group(syscall_group_t* group, uint8_t trace) {
+void sci_trace_group(syscall_group_t* group, syscall_trace_e trace) {
 	group->trace = trace;
 }
 
-void sci_trace(uint16_t sc, uint8_t trace) {
+void sci_trace(uint16_t sc, syscall_trace_e trace) {
 	sci_get_sc(sc)->trace = trace;
 }
 
-void sci_trace_range(uint16_t sc_start, uint16_t sc_end, uint8_t trace) {
+void sci_trace_range(uint16_t sc_start, uint16_t sc_end, syscall_trace_e trace) {
 	if(sc_start > sc_end) {
 		ERROR("sci_trace_range: sc_start=%hu > sc_end=%hu", sc_start, sc_end);
 		return;

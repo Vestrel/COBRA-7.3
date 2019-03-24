@@ -11,7 +11,6 @@ typedef struct sc_pool_elmnt_t sc_pool_elmnt_t;
 #define SYSCALLT_MAX_NAME_LEN 32
 #define SC_POOL_LOCKING
 
-
 /*
  * Types
  */
