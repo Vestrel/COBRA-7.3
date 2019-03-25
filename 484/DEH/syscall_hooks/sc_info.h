@@ -46,44 +46,69 @@ struct syscall_info_t;
 	name->pre_write_cb = sci_pre_write_cb__##name; \
 	name->post_write_cb = sci_post_write_cb__##name;
 
-#define SCI_CB_DUMP_BUFFER(name, buf_arg, len_arg) \
+
+#define _SCI_CB_DUMP_BUFFER_PRECALL_PREPARE(name, buf_arg, len_arg) \
 	SCI_PRECALL_PREPARE_CB(name) { \
-		sc_pe_add(pe, (void*)(pe->args[buf_arg-1]), pe->args[len_arg-1]); \
+		sc_pe_add(pe, (void*)(pe->args[buf_arg]), pe->args[len_arg]); \
+		return 0; \
+	}
+
+#define _SCI_CB_DUMP_BUFFER_POSTCALL_PREPARE(name, buf_arg, len_arg) \
+	SCI_POSTCALL_PREPARE_CB(name) { \
+		sc_pe_add(pe, (void*)(pe->args[buf_arg]), pe->args[len_arg]); \
+		return 0; \
+	}
+
+#define _SCI_CB_DUMP_BUFFER_WRITE(buf) \
+	void *buf = NULL; \
+	uint16_t buf##_len = 0; \
+	if(sc_pe_next(pe, &buf, &buf##_len) != SC_PE_OK) { \
+		ERROR(#buf ": Could not get " #buf " buffer"); \
 		return 0; \
 	} \
 	\
-	SCI_POSTCALL_PREPARE_CB(name) { \
-		sc_pe_add(pe, (void*)(pe->args[buf_arg-1]), pe->args[len_arg-1]); \
-		return 0; \
-	} \
+	if(buf##_len > 0) { \
+		SCW_START \
+		SCW_PRINTF(#buf "= "); \
+		SCW_DUMP(buf, buf##_len); \
+		SCW_PRINTF("\n"); \
+		SCW_FINISH \
+	}
+
+#define SCI_CB_PRECALL_DUMP_BUFFER(name, buf_arg, len_arg) \
+	_SCI_CB_DUMP_BUFFER_PRECALL_PREPARE(name, buf_arg, len_arg) \
+	\
+	SCI_NULL_POSTCALL_PREPARE_CB(name) \
 	\
 	SCI_NULL_PRE_WRITE_CB(name) \
 	\
 	SCI_POST_WRITE_CB(name) { \
-		void *pre_buf = NULL; \
-		uint16_t pre_len = 0; \
-		if(sc_pe_next(pe, &pre_buf, &pre_len) != SC_PE_OK) { \
-			ERROR(#name ": Could not get pre_buf"); \
-			return 0; \
-		} \
-		\
-		void *post_buf = NULL; \
-		uint16_t post_len = 0; \
-		if(sc_pe_next(pe, &post_buf, &post_len) != SC_PE_OK) { \
-			ERROR(#name ": Could not get post_buf"); \
-			return 0; \
-		} \
-		\
-		SCW_START \
-		\
-		SCW_PRINTF("pre= "); \
-		SCW_DUMP(pre_buf, pre_len); \
-		SCW_PRINTF(" post= "); \
-		SCW_DUMP(post_buf, post_len); \
-		SCW_PRINTF("\n"); \
-		\
-		SCW_FINISH \
-		\
+		_SCI_CB_DUMP_BUFFER_WRITE(pre) \
+		return 0; \
+	}
+
+#define SCI_CB_POSTCALL_DUMP_BUFFER(name, buf_arg, len_arg) \
+	SCI_NULL_PRECALL_PREPARE_CB(name) \
+	\
+	_SCI_CB_DUMP_BUFFER_POSTCALL_PREPARE(name, buf_arg, len_arg) \
+	\
+	SCI_NULL_PRE_WRITE_CB(name) \
+	\
+	SCI_POST_WRITE_CB(name) { \
+		_SCI_CB_DUMP_BUFFER_WRITE(post) \
+		return 0; \
+	}
+
+#define SCI_CB_DUMP_BUFFER(name, buf_arg, len_arg) \
+	_SCI_CB_DUMP_BUFFER_PRECALL_PREPARE(name, buf_arg, len_arg) \
+	\
+	_SCI_CB_DUMP_BUFFER_POSTCALL_PREPARE(name, buf_arg, len_arg) \
+	\
+	SCI_NULL_PRE_WRITE_CB(name) \
+	\
+	SCI_POST_WRITE_CB(name) { \
+		_SCI_CB_DUMP_BUFFER_WRITE(pre) \
+		_SCI_CB_DUMP_BUFFER_WRITE(post) \
 		return 0; \
 	}
 
@@ -132,6 +157,7 @@ typedef struct syscall_info_t {
 	sc_writer_callback *post_write_cb;
 	
 	char* arg_fmt[SCI_ARGS_MAX]; // Information about the various parameters
+	uint8_t arg_ptr[SCI_ARGS_MAX]; // If 1, the value pointed to by the arg is also passed to printf. Requires trace=SCT_TRACE_POST
 } syscall_info_t;
 
 extern syscall_info_t *syscall_info;

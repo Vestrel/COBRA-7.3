@@ -215,6 +215,15 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 			suspend_intr();
 			int skip = 0;
 
+			for(uint16_t i = 0; i < 8; i++) {
+				switch(info->arg_ptr[i]) {
+					case 1: pe->args_ptd[i] = (uint64_t)(*(uint8_t*)(pe->args[i])); break;
+					case 2: pe->args_ptd[i] = (uint64_t)(*(uint16_t*)(pe->args[i])); break;
+					case 4: pe->args_ptd[i] = (uint64_t)(*(uint32_t*)(pe->args[i])); break;
+					case 8: pe->args_ptd[i] = (uint64_t)(*(uint64_t*)(pe->args[i])); break;
+				}
+			}
+
 			#ifndef SC_HANDLER_NO_CALLBACKS
 				sc_handler_callback *cb = info->postcall_prepare_cb;
 				if(cb && cb(pe, proc_nm, thrd_nm) != 0)

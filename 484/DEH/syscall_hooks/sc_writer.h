@@ -62,18 +62,18 @@
 
 
 #ifdef USE_ACC_BUF
-	#define SCW_START \
+	#define SCW_START { \
 		char scw_scratch[SCW_SCRATCH_BUF_LEN]; \
 		int scw_len = 0;
 	#define SCW_PRINTF(fmt, ...) SCW_ACC_PRINTF(scw_scratch, SCW_SCRATCH_BUF_LEN, scw_len, fmt, ##__VA_ARGS__ )
 	#define SCW_DUMP(src, len) SCW_ACC_DUMP(src, len)
-	#define SCW_FINISH sc_write(scw_scratch, 0);
+	#define SCW_FINISH sc_write(scw_scratch, 0); }
 #else
-	#define SCW_START \
+	#define SCW_START { \
 		char scw_scratch[SCW_SCRATCH_BUF_LEN];
 	#define SCW_PRINTF(fmt, ...) SCW_IND_SNPRINTF(scw_scratch, SCW_SCRATCH_BUF_LEN, fmt, ##__VA_ARGS__ )
 	#define SCW_DUMP(src, len) SCW_IND_DUMP(src, len)
-	#define SCW_FINISH
+	#define SCW_FINISH }
 #endif
 
 /*

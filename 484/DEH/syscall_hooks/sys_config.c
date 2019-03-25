@@ -16,7 +16,9 @@
 	error_code sys_config_get_service_event(u32 config_id, u32 event_id, vm::ptr<void> event, u64 size);
 */
 
-SCI_CB_DUMP_BUFFER(sys_config_get_service_event, 3, 4)
+SCI_CB_DUMP_BUFFER(sys_config_get_service_event, 2, 3)
+SCI_CB_DUMP_BUFFER(sys_config_register_service, 4, 5)
+SCI_CB_DUMP_BUFFER(sys_config_add_service_listener, 3, 4)
 
 
 int sc_sys_config_init(void) {
@@ -25,13 +27,16 @@ int sc_sys_config_init(void) {
 	SCI_FROM_NAME(sys_config_open)
 	sys_config_open->nargs = 2;
 	sys_config_open->arg_fmt[0] = "equeue_id=0x%lx";
-	sys_config_open->arg_fmt[1] = "config_id=*0x%lx";
+	sys_config_open->arg_ptr[1] = 4;
+	sys_config_open->arg_fmt[1] = "config_id=*0x%lx->0x%x";
+	sys_config_open->trace = SCT_TRACE_POST;
 
 	SCI_FROM_NAME(sys_config_close)
 	sys_config_close->nargs = 1;
 	sys_config_close->arg_fmt[0] = "equeue_id=0x%lx";
 
 	SCI_FROM_NAME(sys_config_register_service)
+	SCI_REGISTER_CBS(sys_config_register_service)
 	sys_config_register_service->nargs = 7;
 	sys_config_register_service->arg_fmt[0] = "config_id=0x%lx";
 	sys_config_register_service->arg_fmt[1] = "b=0x%lx";
@@ -39,17 +44,22 @@ int sc_sys_config_init(void) {
 	sys_config_register_service->arg_fmt[3] = "d=0x%lx";
 	sys_config_register_service->arg_fmt[4] = "data=*0x%lx";
 	sys_config_register_service->arg_fmt[5] = "size=%ld";
-	sys_config_register_service->arg_fmt[6] = "output=*0x%lx";
+	sys_config_register_service->arg_ptr[6] = 4;
+	sys_config_register_service->arg_fmt[6] = "output=*0x%lx->0x%x";
+	sys_config_register_service->trace = SCT_TRACE_POST;
 
 	SCI_FROM_NAME(sys_config_add_service_listener)
+	SCI_REGISTER_CBS(sys_config_add_service_listener)
 	sys_config_add_service_listener->nargs = 7;
 	sys_config_add_service_listener->arg_fmt[0] = "config_id=0x%lx";
 	sys_config_add_service_listener->arg_fmt[1] = "id=0x%lx";
 	sys_config_add_service_listener->arg_fmt[2] = "c=0x%lx";
-	sys_config_add_service_listener->arg_fmt[3] = "d=0x%lx";
-	sys_config_add_service_listener->arg_fmt[4] = "unk=0x%lx";
+	sys_config_add_service_listener->arg_fmt[3] = "buf=0x%lx";
+	sys_config_add_service_listener->arg_fmt[4] = "size=%ld";
 	sys_config_add_service_listener->arg_fmt[5] = "f=0x%lx";
-	sys_config_add_service_listener->arg_fmt[6] = "handle=*0x%lx";
+	sys_config_add_service_listener->arg_ptr[6] = 4;
+	sys_config_add_service_listener->arg_fmt[6] = "handle=*0x%lx->0x%x";
+	sys_config_add_service_listener->trace = SCT_TRACE_POST;
 
 	SCI_FROM_NAME(sys_config_get_service_event)
 	SCI_REGISTER_CBS(sys_config_get_service_event)

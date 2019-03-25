@@ -911,7 +911,7 @@ int init_syscall_info(void) {
 		info->post_write_cb = (sc_writer_callback*)NULL;
 
 		// Arguments
-		#define ARG_FMT(x) info->arg_fmt[x] = "arg" #x "=0x%1lx"
+		#define ARG_FMT(x) info->arg_fmt[x] = "arg" #x "=0x%1lx"; info->arg_ptr[x] = 0;
 		ARG_FMT(0);
 		ARG_FMT(1);
 		ARG_FMT(2);

@@ -23,6 +23,7 @@ struct sc_pool_elmnt_t {
 	struct syscall_info_t *info;
 
 	uint64_t args[8];
+	uint64_t args_ptd[8];
 	uint64_t res;
 
 	uint32_t pid;
