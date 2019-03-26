@@ -923,19 +923,20 @@ int init_syscall_info(void) {
 	}
 
 	// Groups
-	SCI_CREATE_GROUP(sys_semaphore, SCT_DONT_TRACE);
-	SCI_CREATE_GROUP(sys_lwmutex  , SCT_DONT_TRACE);
-	SCI_CREATE_GROUP(sys_mutex    , SCT_DONT_TRACE);
-	SCI_CREATE_GROUP(sys_cond     , SCT_DONT_TRACE);
-	SCI_CREATE_GROUP(sys_lwcond   , SCT_DONT_TRACE);
-	SCI_CREATE_GROUP(sys_rwlock   , SCT_DONT_TRACE);
-	SCI_CREATE_GROUP(sys_event    , SCT_DONT_TRACE);
-	SCI_CREATE_GROUP(sys_net      , SCT_DONT_TRACE);
-	SCI_CREATE_GROUP(sys_fs       , SCT_DONT_TRACE);
-	SCI_CREATE_GROUP(sys_time_    , SCT_DONT_TRACE);
-	SCI_CREATE_GROUP(sys_timer    , SCT_DONT_TRACE);
-	SCI_CREATE_GROUP(sys_memory   , SCT_DONT_TRACE);
-	SCI_CREATE_GROUP(sys_storage  , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_semaphore , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_lwmutex   , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_mutex     , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_cond      , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_lwcond    , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_rwlock    , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_event     , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_net       , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_fs        , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_time_     , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_timer     , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_memory    , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_storage   , SCT_DONT_TRACE);
+	SCI_CREATE_GROUP(sys_spu_thread, SCT_DONT_TRACE);
 
 	return 0;
 }

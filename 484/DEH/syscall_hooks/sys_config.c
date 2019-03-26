@@ -17,7 +17,7 @@
 */
 
 SCI_CB_DUMP_BUFFER(sys_config_get_service_event, 2, 3)
-SCI_CB_DUMP_BUFFER(sys_config_register_service, 4, 5)
+SCI_CB_PRECALL_DUMP_BUFFER(sys_config_register_service, 4, 5)
 SCI_CB_DUMP_BUFFER(sys_config_add_service_listener, 3, 4)
 
 
@@ -60,6 +60,11 @@ int sc_sys_config_init(void) {
 	sys_config_add_service_listener->arg_ptr[6] = 4;
 	sys_config_add_service_listener->arg_fmt[6] = "handle=*0x%lx->0x%x";
 	sys_config_add_service_listener->trace = SCT_TRACE_POST;
+	
+	SCI_FROM_NAME(sys_config_remove_service_listener)
+	sys_config_remove_service_listener->nargs = 2;
+	sys_config_remove_service_listener->arg_fmt[0] = "config_id=0x%lx";
+	sys_config_remove_service_listener->arg_fmt[1] = "handle=0x%lx";
 
 	SCI_FROM_NAME(sys_config_get_service_event)
 	SCI_REGISTER_CBS(sys_config_get_service_event)

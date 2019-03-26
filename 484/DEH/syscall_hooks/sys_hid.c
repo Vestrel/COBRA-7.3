@@ -22,7 +22,7 @@
 SCI_CB_DUMP_BUFFER(sys_hid_manager_ioctl, 2, 3)
 SCI_CB_DUMP_BUFFER(sys_hid_manager_513, 2, 3)
 SCI_CB_DUMP_BUFFER(sys_hid_manager_514, 1, 2)
-SCI_CB_DUMP_BUFFER(sys_hid_manager_read, 2, 3)
+SCI_CB_POSTCALL_DUMP_BUFFER(sys_hid_manager_read, 2, 3)
 
 
 int sc_sys_hid_init(void) {
@@ -45,10 +45,12 @@ int sc_sys_hid_init(void) {
 
 	SCI_FROM_NAME(sys_hid_manager_check_focus)
 	sys_hid_manager_check_focus->nargs = 0;
+	sys_hid_manager_check_focus->trace = SCT_DONT_TRACE;
 	
 	SCI_FROM_NAME(sys_hid_manager_grab_focus)
 	sys_hid_manager_grab_focus->nargs = 1;
 	sys_hid_manager_grab_focus->arg_fmt[0] = "0x%lx";
+	sys_hid_manager_grab_focus->trace = SCT_DONT_TRACE;
 
 	SCI_FROM_NAME(sys_hid_manager_is_process_permission_root)
 	sys_hid_manager_is_process_permission_root->nargs = 0;
@@ -77,7 +79,7 @@ int sc_sys_hid_init(void) {
 	sys_hid_manager_514->arg_fmt[0] = "pkg_id=0x%lx";
 	sys_hid_manager_514->arg_fmt[1] = "buf=*0x%lx";
 	sys_hid_manager_514->arg_fmt[2] = "buf_size=%ld";
-	sys_hid_manager_514->trace = SCT_TRACE_POST;
+	sys_hid_manager_514->trace = SCT_DONT_TRACE;
 
 	SCI_FROM_NAME(sys_hid_manager_read)
 	SCI_REGISTER_CBS(sys_hid_manager_read)
