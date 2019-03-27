@@ -28,6 +28,11 @@ struct syscall_info_t;
 #define SCI_PRE_WRITE_CB(name) int sci_pre_write_cb__##name(struct sc_pool_elmnt_t *pe)
 #define SCI_POST_WRITE_CB(name) int sci_post_write_cb__##name(struct sc_pool_elmnt_t *pe)
 
+#define SCI_PRECALL_PREPARE_CB_ALIAS(name, alias) sc_handler_callback *sci_precall_prepare_cb__##name = sci_precall_prepare_cb__##alias;
+#define SCI_POSTCALL_PREPARE_CB_ALIAS(name, alias) sc_handler_callback *sci_postcall_prepare_cb__##name = sci_postcall_prepare_cb__##alias;
+#define SCI_PRE_WRITE_CB_ALIAS(name, alias) sc_writer_callback *sci_pre_write_cb__##name = sci_pre_write_cb__##alias;
+#define SCI_POST_WRITE_CB_ALIAS(name, alias) sc_writer_callback *sci_post_write_cb__##name = sci_post_write_cb__##alias;
+
 #define SCI_NULL_PRECALL_PREPARE_CB(name) sc_handler_callback *sci_precall_prepare_cb__##name = NULL;
 #define SCI_NULL_POSTCALL_PREPARE_CB(name) sc_handler_callback *sci_postcall_prepare_cb__##name = NULL;
 #define SCI_NULL_PRE_WRITE_CB(name) sc_writer_callback *sci_pre_write_cb__##name = NULL;
@@ -47,19 +52,19 @@ struct syscall_info_t;
 	name->post_write_cb = sci_post_write_cb__##name;
 
 
-#define _SCI_CB_DUMP_BUFFER_PRECALL_PREPARE(name, buf_arg, len_arg) \
+#define SCI_CB_DUMP_BUFFER_PRECALL_PREPARE(name, buf_arg, len_arg) \
 	SCI_PRECALL_PREPARE_CB(name) { \
 		sc_pe_add(pe, (void*)(pe->args[buf_arg]), pe->args[len_arg]); \
 		return 0; \
 	}
 
-#define _SCI_CB_DUMP_BUFFER_POSTCALL_PREPARE(name, buf_arg, len_arg) \
+#define SCI_CB_DUMP_BUFFER_POSTCALL_PREPARE(name, buf_arg, len_arg) \
 	SCI_POSTCALL_PREPARE_CB(name) { \
 		sc_pe_add(pe, (void*)(pe->args[buf_arg]), pe->args[len_arg]); \
 		return 0; \
 	}
 
-#define _SCI_CB_DUMP_BUFFER_WRITE(buf) \
+#define SCI_CB_DUMP_BUFFER_WRITE(buf) \
 	void *buf = NULL; \
 	uint16_t buf##_len = 0; \
 	if(sc_pe_next(pe, &buf, &buf##_len) != SC_PE_OK) { \
@@ -76,7 +81,7 @@ struct syscall_info_t;
 	}
 
 #define SCI_CB_PRECALL_DUMP_BUFFER(name, buf_arg, len_arg) \
-	_SCI_CB_DUMP_BUFFER_PRECALL_PREPARE(name, buf_arg, len_arg) \
+	SCI_CB_DUMP_BUFFER_PRECALL_PREPARE(name, buf_arg, len_arg) \
 	\
 	SCI_NULL_POSTCALL_PREPARE_CB(name) \
 	\
@@ -90,7 +95,7 @@ struct syscall_info_t;
 #define SCI_CB_POSTCALL_DUMP_BUFFER(name, buf_arg, len_arg) \
 	SCI_NULL_PRECALL_PREPARE_CB(name) \
 	\
-	_SCI_CB_DUMP_BUFFER_POSTCALL_PREPARE(name, buf_arg, len_arg) \
+	SCI_CB_DUMP_BUFFER_POSTCALL_PREPARE(name, buf_arg, len_arg) \
 	\
 	SCI_NULL_PRE_WRITE_CB(name) \
 	\
@@ -100,15 +105,15 @@ struct syscall_info_t;
 	}
 
 #define SCI_CB_DUMP_BUFFER(name, buf_arg, len_arg) \
-	_SCI_CB_DUMP_BUFFER_PRECALL_PREPARE(name, buf_arg, len_arg) \
+	SCI_CB_DUMP_BUFFER_PRECALL_PREPARE(name, buf_arg, len_arg) \
 	\
-	_SCI_CB_DUMP_BUFFER_POSTCALL_PREPARE(name, buf_arg, len_arg) \
+	SCI_CB_DUMP_BUFFER_POSTCALL_PREPARE(name, buf_arg, len_arg) \
 	\
 	SCI_NULL_PRE_WRITE_CB(name) \
 	\
 	SCI_POST_WRITE_CB(name) { \
-		_SCI_CB_DUMP_BUFFER_WRITE(pre) \
-		_SCI_CB_DUMP_BUFFER_WRITE(post) \
+		SCI_CB_DUMP_BUFFER_WRITE(pre) \
+		SCI_CB_DUMP_BUFFER_WRITE(post) \
 		return 0; \
 	}
 

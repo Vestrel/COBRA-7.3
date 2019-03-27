@@ -111,6 +111,95 @@ static void sc_add_process_and_thread_info(sc_pool_elmnt_t *pe, char **out_proc_
 	}
 }
 
+static sc_pool_elmnt_t* __attribute__((noinline)) handle_precall(sc_pool_elmnt_t *pe, char **_proc_nm, char **_thrd_nm, syscall_trace_e should_trace) {
+	suspend_intr();
+
+	syscall_info_t *info = pe->info;
+
+	// We don't know the result yet
+	pe->res     =    0;
+	pe->has_res =    0;
+
+	// Process/Thread information
+	char *proc_nm = NULL;
+	char *thrd_nm = NULL;
+	sc_add_process_and_thread_info(pe, &proc_nm, &thrd_nm);
+
+	// Callbacks / Filtering
+	int skip = 0;
+
+	if(proc_nm != NULL && thrd_nm != NULL) {
+		if(strcmp(proc_nm, "vsh.self") == 0) {
+			skip |= strcmp(thrd_nm, "aud_SERIAL" ) == 0 ||
+					strcmp(thrd_nm, "aud_BS"     ) == 0 ||
+					strcmp(thrd_nm, "SceVshPower") == 0;
+		}
+	}
+
+	#ifndef SC_HANDLER_NO_CALLBACKS
+		if(!skip) {
+			sc_handler_callback *cb = info->precall_prepare_cb;
+			if(cb && cb(pe, proc_nm, thrd_nm) != 0)
+				skip = 1;
+		}
+	#endif
+
+	// Submit parameters
+	if(!skip) {
+		*_proc_nm = proc_nm;
+		*_thrd_nm = thrd_nm;
+
+		if(should_trace != SCT_TRACE_POST)
+			sc_send_pool_elmnt(pe);
+	}
+	else {
+		sc_pe_unlock(pe);
+		pe = NULL;
+	}
+
+	resume_intr();
+
+	return pe;
+}
+
+static void __attribute__((noinline)) handle_postcall(sc_pool_elmnt_t *pe, uint64_t r4, uint64_t r5, uint64_t r6, uint64_t r7, char *proc_nm, char *thrd_nm) {
+	suspend_intr();
+
+	syscall_info_t *info = pe->info;
+
+	pe->res_regs[0] = r4;
+	pe->res_regs[1] = r5;
+	pe->res_regs[2] = r6;
+	pe->res_regs[3] = r7;
+
+	int skip = 0;
+
+	for(uint16_t i = 0; i < 8; i++) {
+		switch(info->arg_ptr[i]) {
+			case 1: pe->args_ptd[i] = (uint64_t)(*(uint8_t*)(pe->args[i])); break;
+			case 2: pe->args_ptd[i] = (uint64_t)(*(uint16_t*)(pe->args[i])); break;
+			case 4: pe->args_ptd[i] = (uint64_t)(*(uint32_t*)(pe->args[i])); break;
+			case 8: pe->args_ptd[i] = (uint64_t)(*(uint64_t*)(pe->args[i])); break;
+		}
+	}
+
+	#ifndef SC_HANDLER_NO_CALLBACKS
+		sc_handler_callback *cb = info->postcall_prepare_cb;
+		if(cb && cb(pe, proc_nm, thrd_nm) != 0)
+			skip = 1;
+	#endif
+
+	// Submit parameters
+	if(!skip) {
+		sc_send_pool_elmnt(pe);
+	}
+	else {
+		sc_pe_unlock(pe);
+		pe = NULL;
+	}
+	resume_intr();
+}
+
 
 /*
  * Main syscall handler
@@ -135,23 +224,17 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 	uint32_t pe_uid = 0;
 	char *proc_nm = NULL;
 	char *thrd_nm = NULL;
-	syscall_info_t *info = NULL;
 	syscall_trace_e should_trace = SCT_DEFAULT;
 
 	if(num < MAX_NUM_OF_SYSTEM_CALLS) {
-		info = sci_get_sc(num);
+		syscall_info_t *info = sci_get_sc(num);
 		should_trace = sci_get_trace(info);
 		
 		if(should_trace != SCT_DONT_TRACE) {
 			pe = sc_pool_get_elmnt();
-			suspend_intr();
 			if(pe != NULL) {
-				pe->info = info;
 				pe_uid = pe->uid;
-
-				// We don't know the result yet
-				pe->res     =    0;
-				pe->has_res =    0;
+				pe->info = info;
 
 				// But we know the parameters
 				pe->args[0] =  r3;
@@ -163,39 +246,8 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 				pe->args[6] =  r9;
 				pe->args[7] = r10;
 
-				// Process/Thread information
-				sc_add_process_and_thread_info(pe, &proc_nm, &thrd_nm);
-
-				// Callbacks / Filtering
-				int skip = 0;
-
-				if(proc_nm != NULL && thrd_nm != NULL) {
-					if(strcmp(proc_nm, "vsh.self") == 0) {
-						skip |= strcmp(thrd_nm, "aud_SERIAL" ) == 0 ||
-						        strcmp(thrd_nm, "aud_BS"     ) == 0 ||
-						        strcmp(thrd_nm, "SceVshPower") == 0;
-					}
-				}
-
-				#ifndef SC_HANDLER_NO_CALLBACKS
-					if(!skip) {
-						sc_handler_callback *cb = info->precall_prepare_cb;
-						if(cb && cb(pe, proc_nm, thrd_nm) != 0)
-							skip = 1;
-					}
-				#endif
-
-				// Submit parameters
-				if(!skip) {
-					if(should_trace != SCT_TRACE_POST)
-						sc_send_pool_elmnt(pe);
-				}
-				else {
-					sc_pe_unlock(pe);
-					pe = NULL;
-				}
+				pe = handle_precall(pe, &thrd_nm, &proc_nm, should_trace);
 			}
-			resume_intr();
 		}
 	}
 	else
@@ -206,41 +258,42 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 	// Do actual syscall
 	uint64_t res = syscall(r3, r4, r5, r6, r7, r8, r9, r10);
 
+	#ifndef SC_AVOID_LARGE_STACK
+		volatile register uint64_t _ret_r4 asm("r4");
+		volatile register uint64_t _ret_r5 asm("r5");
+		volatile register uint64_t _ret_r6 asm("r6");
+		volatile register uint64_t _ret_r7 asm("r7");
+
+		uint64_t ret_r4 = _ret_r4;
+		uint64_t ret_r5 = _ret_r5;
+		uint64_t ret_r6 = _ret_r6;
+		uint64_t ret_r7 = _ret_r7;
+	#endif
+
 	// Store result (if we are still alive here, not all syscalls return)
 	if(pe != NULL && pe->uid == pe_uid) {
 		pe->res = res;
 		pe->has_res = 1;
 
 		if(should_trace == SCT_TRACE_POST) {
-			suspend_intr();
-			int skip = 0;
-
-			for(uint16_t i = 0; i < 8; i++) {
-				switch(info->arg_ptr[i]) {
-					case 1: pe->args_ptd[i] = (uint64_t)(*(uint8_t*)(pe->args[i])); break;
-					case 2: pe->args_ptd[i] = (uint64_t)(*(uint16_t*)(pe->args[i])); break;
-					case 4: pe->args_ptd[i] = (uint64_t)(*(uint32_t*)(pe->args[i])); break;
-					case 8: pe->args_ptd[i] = (uint64_t)(*(uint64_t*)(pe->args[i])); break;
-				}
-			}
-
-			#ifndef SC_HANDLER_NO_CALLBACKS
-				sc_handler_callback *cb = info->postcall_prepare_cb;
-				if(cb && cb(pe, proc_nm, thrd_nm) != 0)
-					skip = 1;
+			#ifndef SC_AVOID_LARGE_STACK
+				handle_postcall(pe, ret_r4, ret_r5, ret_r6, ret_r7, proc_nm, thrd_nm);
+			#else
+				handle_postcall(pe, 0, 0, 0, 0, proc_nm, thrd_nm);
 			#endif
-
-			// Submit parameters
-			if(!skip) {
-				sc_send_pool_elmnt(pe);
-			}
-			else {
-				sc_pe_unlock(pe);
-				pe = NULL;
-			}
-			resume_intr();
 		}
 	}
+
+	#ifndef SC_AVOID_LARGE_STACK
+		__asm__ __volatile__ (
+			"mr %[ret4],%[in4] \n\t"
+			"mr %[ret5],%[in5] \n\t"
+			"mr %[ret6],%[in6] \n\t"
+			"mr %[ret7],%[in7] \n\t"
+			: [ret4] "=&r" (_ret_r4), [ret5] "=&r" (_ret_r5), [ret6] "=&r" (_ret_r6), [ret7] "=&r" (_ret_r7)
+			: [in4] "r" (ret_r4), [in5] "r" (ret_r5), [in6] "r" (ret_r6), [in7] "r" (ret_r7)
+		);
+	#endif
 
 	return res;
 }

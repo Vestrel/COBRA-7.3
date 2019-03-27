@@ -6,7 +6,7 @@
 #include "sc_info.h"
 #include "utilities.h"
 
-#include "sys_hid.h"
+#include "sc_sys_hid.h"
 
 /*
 	error_code sys_hid_manager_open(u64 device_type, u64 port_no, vm::ptr<u32> handle);
@@ -22,7 +22,7 @@
 SCI_CB_DUMP_BUFFER(sys_hid_manager_ioctl, 2, 3)
 SCI_CB_DUMP_BUFFER(sys_hid_manager_513, 2, 3)
 SCI_CB_DUMP_BUFFER(sys_hid_manager_514, 1, 2)
-SCI_CB_POSTCALL_DUMP_BUFFER(sys_hid_manager_read, 2, 3)
+SCI_CB_DUMP_BUFFER(sys_hid_manager_read, 2, 3)
 
 
 int sc_sys_hid_init(void) {
@@ -30,7 +30,7 @@ int sc_sys_hid_init(void) {
 
 	SCI_FROM_NAME(sys_hid_manager_open)
 	sys_hid_manager_open->nargs = 3;
-	sys_hid_manager_open->arg_fmt[0] = "device_type=0x%ld";
+	sys_hid_manager_open->arg_fmt[0] = "device_type=%ld";
 	sys_hid_manager_open->arg_fmt[1] = "port_no=%ld";
 	sys_hid_manager_open->arg_ptr[2] = 4;
 	sys_hid_manager_open->arg_fmt[2] = "handle=*0x%lx->0x%x";

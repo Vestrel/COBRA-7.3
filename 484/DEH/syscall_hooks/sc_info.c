@@ -964,11 +964,11 @@ syscall_trace_e sci_get_trace(syscall_info_t *info) {
 	syscall_trace_e sc_trace = info->trace;
 	syscall_trace_e gr_trace = (info->group != NULL) ? info->group->trace : SCT_DEFAULT;
 
-	if(sc_trace == SCT_DONT_TRACE || gr_trace == SCT_DONT_TRACE)
+	if(sc_trace == SCT_DEFAULT && gr_trace == SCT_DEFAULT)
 		return SCT_DONT_TRACE;
 
-	if(sc_trace == SCT_DEFAULT && gr_trace == SCT_DEFAULT)
-		return SCT_TRACE_PRE;
+	if(sc_trace == SCT_DONT_TRACE || (sc_trace == SCT_DEFAULT && gr_trace == SCT_DONT_TRACE))
+		return SCT_DONT_TRACE;
 
 	if(sc_trace != SCT_DEFAULT)
 		return sc_trace;

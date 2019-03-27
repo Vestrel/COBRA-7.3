@@ -25,6 +25,7 @@ struct sc_pool_elmnt_t {
 	uint64_t args[8];
 	uint64_t args_ptd[8];
 	uint64_t res;
+	uint64_t res_regs[4]; // r4-7 after the syscall returns (only if trace==SCT_TRACE_POST)
 
 	uint32_t pid;
 	uint32_t tid;

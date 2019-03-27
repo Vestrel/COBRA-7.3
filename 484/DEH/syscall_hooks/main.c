@@ -10,8 +10,9 @@
 #include "sc_pool.h"
 #include "sc_handler.h"
 #include "sc_info.h"
-#include "sys_hid.h"
-#include "sys_config.h"
+#include "sc_sys_hid.h"
+#include "sc_sys_config.h"
+#include "sc_sys_event_queue.h"
 
 
 /*
@@ -28,6 +29,9 @@ void main(void)
 		return;
 
 	if(sc_sys_config_init() != 0)
+		return;
+
+	if(sc_sys_event_queue_init() != 0)
 		return;
 
 	if(init_syscall_pool() != 0)

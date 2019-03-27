@@ -5,8 +5,9 @@
 
 #include "sc_info.h"
 #include "utilities.h"
+#include "sc_sys_event_queue.h"
 
-#include "sys_config.h"
+#include "sc_sys_config.h"
 
 /*
 	error_code sys_config_open(u32 equeue_id, vm::ptr<u32> config_id);
@@ -16,15 +17,25 @@
 	error_code sys_config_get_service_event(u32 config_id, u32 event_id, vm::ptr<void> event, u64 size);
 */
 
+SCI_NULL_PRECALL_PREPARE_CB(sys_config_open)
+SCI_POSTCALL_PREPARE_CB(sys_config_open) {
+	if(pe->res == 0)
+		sc_sys_event_queue_trace_id((uint32_t)(pe->args[0]));
+	return 0;
+}
+SCI_NULL_PRE_WRITE_CB(sys_config_open)
+SCI_NULL_POST_WRITE_CB(sys_config_open)
+
 SCI_CB_DUMP_BUFFER(sys_config_get_service_event, 2, 3)
-SCI_CB_PRECALL_DUMP_BUFFER(sys_config_register_service, 4, 5)
+SCI_CB_DUMP_BUFFER(sys_config_register_service, 4, 5)
 SCI_CB_DUMP_BUFFER(sys_config_add_service_listener, 3, 4)
 
 
 int sc_sys_config_init(void) {
-	SCI_CREATE_GROUP(sys_config, SCT_DEFAULT);
+	SCI_CREATE_GROUP(sys_config, SCT_TRACE_POST);
 
 	SCI_FROM_NAME(sys_config_open)
+	SCI_REGISTER_CBS(sys_config_open)
 	sys_config_open->nargs = 2;
 	sys_config_open->arg_fmt[0] = "equeue_id=0x%lx";
 	sys_config_open->arg_ptr[1] = 4;
@@ -34,6 +45,7 @@ int sc_sys_config_init(void) {
 	SCI_FROM_NAME(sys_config_close)
 	sys_config_close->nargs = 1;
 	sys_config_close->arg_fmt[0] = "equeue_id=0x%lx";
+	sys_config_close->trace = SCT_TRACE_POST;
 
 	SCI_FROM_NAME(sys_config_register_service)
 	SCI_REGISTER_CBS(sys_config_register_service)
@@ -48,6 +60,12 @@ int sc_sys_config_init(void) {
 	sys_config_register_service->arg_fmt[6] = "output=*0x%lx->0x%x";
 	sys_config_register_service->trace = SCT_TRACE_POST;
 
+	SCI_FROM_NAME(sys_config_unregister_service)
+	sys_config_unregister_service->nargs = 2;
+	sys_config_unregister_service->arg_fmt[0] = "config_id=0x%lx";
+	sys_config_unregister_service->arg_fmt[1] = "service_handle=0x%lx";
+	sys_config_unregister_service->trace = SCT_TRACE_POST;
+
 	SCI_FROM_NAME(sys_config_add_service_listener)
 	SCI_REGISTER_CBS(sys_config_add_service_listener)
 	sys_config_add_service_listener->nargs = 7;
@@ -60,11 +78,12 @@ int sc_sys_config_init(void) {
 	sys_config_add_service_listener->arg_ptr[6] = 4;
 	sys_config_add_service_listener->arg_fmt[6] = "handle=*0x%lx->0x%x";
 	sys_config_add_service_listener->trace = SCT_TRACE_POST;
-	
+
 	SCI_FROM_NAME(sys_config_remove_service_listener)
 	sys_config_remove_service_listener->nargs = 2;
 	sys_config_remove_service_listener->arg_fmt[0] = "config_id=0x%lx";
-	sys_config_remove_service_listener->arg_fmt[1] = "handle=0x%lx";
+	sys_config_remove_service_listener->arg_fmt[1] = "listener_handle=0x%lx";
+	sys_config_remove_service_listener->trace = SCT_TRACE_POST;
 
 	SCI_FROM_NAME(sys_config_get_service_event)
 	SCI_REGISTER_CBS(sys_config_get_service_event)
