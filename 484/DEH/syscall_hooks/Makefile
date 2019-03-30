@@ -22,7 +22,7 @@ CFLAGS += --std=gnu99 -fgnu89-inline -Os -g
 
 LDFLAGS= -T $(TARGET).ld -nostartfiles -nostdlib -nodefaultlibs -mbig-endian -Wl,-static -L. $(foreach dir,$(LIBSDIR),-L$(dir)) $(LIBS) -Wl,-g
 
-OBJS = start.o main.o utilities.o sc_info.o sc_handler.o sc_writer.o sc_pool.o sc_sys_hid.o sc_sys_config.o sc_sys_event_queue.o ../lv2/src/usb.o ../lv2/src/patch.o ../lv2/src/interrupt.o ../lv2/src/interrupt_c.o ../lv2/src/io.o ../lv2/src/libc.o \
+OBJS = start.o main.o utilities.o sc_info.o sc_handler.o sc_writer.o sc_pool.o sc_sys_hid.o sc_sys_config.o sc_sys_event_queue.o sc_sys_net.o ../lv2/src/usb.o ../lv2/src/patch.o ../lv2/src/interrupt.o ../lv2/src/interrupt_c.o ../lv2/src/io.o ../lv2/src/libc.o \
 	../lv2/src/libc_c.o ../lv2/src/memory.o ../lv2/src/memory_c.o ../lv2/src/thread.o ../lv2/src/thread_c.o ../lv2/src/process.o \
 	../lv2/src/synchronization.o ../lv2/src/modules.o ../lv2/src/modules_c.o ../lv2/src/storage.o ../lv2/src/object.o \
 	../lv2/src/security.o ../lv2/src/time.o ../lv2/src/hid.o ../lv2/src/pad.o ../lv2/src/syscall.o ../lv1/src/hvcall.o

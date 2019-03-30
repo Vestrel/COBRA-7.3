@@ -9,14 +9,8 @@
 
 #include "sc_sys_config.h"
 
-/*
-	error_code sys_config_open(u32 equeue_id, vm::ptr<u32> config_id);
-	error_code sys_config_close(u32 equeue_id);
-	error_code sys_config_register_service(ppu_thread& ppu, u32 config_id, s64 b, u32 c, u32 d, vm::ptr<u32> data, u32 size, vm::ptr<u32> output);
-	error_code sys_config_add_service_listener(u32 config_id, s64 id, u32 c, u32 d, u32 unk, u32 f, vm::ptr<u32> service_listener_handle);
-	error_code sys_config_get_service_event(u32 config_id, u32 event_id, vm::ptr<void> event, u64 size);
-*/
 
+// sys_config_open
 SCI_NULL_PRECALL_PREPARE_CB(sys_config_open)
 SCI_POSTCALL_PREPARE_CB(sys_config_open) {
 	if(pe->res == 0)
@@ -26,7 +20,54 @@ SCI_POSTCALL_PREPARE_CB(sys_config_open) {
 SCI_NULL_PRE_WRITE_CB(sys_config_open)
 SCI_NULL_POST_WRITE_CB(sys_config_open)
 
-SCI_CB_DUMP_BUFFER(sys_config_get_service_event, 2, 3)
+// sys_config_get_service_event
+//SCI_CB_DUMP_BUFFER(sys_config_get_service_event, 2, 3)
+typedef struct sys_config_service_event_t {
+	uint32_t service_listener_handle;
+	uint32_t event_added;
+	uint64_t service_id;
+	uint64_t user_id;
+	/* if event_added==0, the following fields will not be present */
+	uint64_t verbosity;
+	uint32_t buf_size;
+	uint32_t padding;
+	uint8_t buf[256];
+} sys_config_service_event_t;
+
+SCI_NULL_PRECALL_PREPARE_CB(sys_config_get_service_event)
+SCI_CB_DUMP_BUFFER_POSTCALL_PREPARE(sys_config_get_service_event, 2, 3)
+SCI_NULL_PRE_WRITE_CB(sys_config_get_service_event)
+
+SCI_POST_WRITE_CB(sys_config_get_service_event) {
+	void *buf = NULL;
+	uint16_t buf_len = 0;
+	if(sc_pe_next(pe, &buf, &buf_len) != SC_PE_OK) {
+		ERROR("sys_config_get_service_event: Could not get buffer");
+		return 0;
+	}
+
+	if(buf_len > 0) {
+		sys_config_service_event_t *sev = (sys_config_service_event_t*)buf;
+
+		SCW_START
+
+		SCW_PRINTF("listener= 0x%x    added= %d\n", sev->service_listener_handle, sev->event_added);
+		SCW_PRINTF("\tsid= 0x%lx   user_id= 0x%lx\n", sev->service_id, sev->user_id);
+
+		if(sev->event_added) {
+			SCW_PRINTF("\tverbosity= 0x%lx   buf_size= 0x%x   padding= 0x%x\n", sev->verbosity, sev->buf_size, sev->padding);
+			SCW_PRINTF("\tbuf= ");
+			SCW_DUMP(sev->buf, sev->buf_size);
+			SCW_PRINTF("\n");
+		}
+
+		SCW_FINISH
+	}
+
+	return 0;
+}
+
+// misc
 SCI_CB_DUMP_BUFFER(sys_config_register_service, 4, 5)
 SCI_CB_DUMP_BUFFER(sys_config_add_service_listener, 3, 4)
 

@@ -13,6 +13,7 @@
 #include "sc_sys_hid.h"
 #include "sc_sys_config.h"
 #include "sc_sys_event_queue.h"
+#include "sc_sys_net.h"
 
 
 /*
@@ -25,7 +26,10 @@ void main(void)
 	if(init_syscall_info() != 0)
 		return;
 
-	if(sc_sys_hid_init() != 0)
+	//if(sc_sys_hid_init() != 0)
+	//	return;
+
+	if(sc_sys_net_init() != 0)
 		return;
 
 	if(sc_sys_config_init() != 0)

@@ -45,6 +45,12 @@ struct syscall_info_t;
 		return 0; \
 	}
 
+#define SCI_START(name) { \
+	SCI_FROM_NAME(name) \
+	syscall_info_t *s = name; \
+
+#define SCI_END }
+
 #define SCI_REGISTER_CBS(name) \
 	name->precall_prepare_cb = sci_precall_prepare_cb__##name; \
 	name->postcall_prepare_cb = sci_postcall_prepare_cb__##name; \
@@ -88,7 +94,7 @@ struct syscall_info_t;
 	SCI_NULL_PRE_WRITE_CB(name) \
 	\
 	SCI_POST_WRITE_CB(name) { \
-		_SCI_CB_DUMP_BUFFER_WRITE(pre) \
+		SCI_CB_DUMP_BUFFER_WRITE(pre) \
 		return 0; \
 	}
 
@@ -100,7 +106,7 @@ struct syscall_info_t;
 	SCI_NULL_PRE_WRITE_CB(name) \
 	\
 	SCI_POST_WRITE_CB(name) { \
-		_SCI_CB_DUMP_BUFFER_WRITE(post) \
+		SCI_CB_DUMP_BUFFER_WRITE(post) \
 		return 0; \
 	}
 
