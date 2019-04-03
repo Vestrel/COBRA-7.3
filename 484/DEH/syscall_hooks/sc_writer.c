@@ -179,7 +179,7 @@ void default_syscall_printer(sc_pool_elmnt_t *pe)
 				SCW_PRINTF(", ");
 
 			if(info->arg_ptr[i]) {
-				SCW_PRINTF(info->arg_fmt[i], pe->args[i], pe->args_ptd[i]);
+				SCW_PRINTF(info->arg_fmt[i], pe->args[i], pe->args[i] == 0 ? 0 : pe->args_ptd[i]);
 			} else {
 				SCW_PRINTF(info->arg_fmt[i], pe->args[i]);
 			}

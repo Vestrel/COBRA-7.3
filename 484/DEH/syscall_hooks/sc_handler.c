@@ -175,11 +175,13 @@ static void __attribute__((noinline)) handle_postcall(sc_pool_elmnt_t *pe, uint6
 	int skip = 0;
 
 	for(uint16_t i = 0; i < 8; i++) {
-		switch(info->arg_ptr[i]) {
-			case 1: pe->args_ptd[i] = (uint64_t)(*(uint8_t*)(pe->args[i])); break;
-			case 2: pe->args_ptd[i] = (uint64_t)(*(uint16_t*)(pe->args[i])); break;
-			case 4: pe->args_ptd[i] = (uint64_t)(*(uint32_t*)(pe->args[i])); break;
-			case 8: pe->args_ptd[i] = (uint64_t)(*(uint64_t*)(pe->args[i])); break;
+		if(pe->args[i] != 0) {
+			switch(info->arg_ptr[i]) {
+				case 1: pe->args_ptd[i] = (uint64_t)(*(uint8_t*)(pe->args[i])); break;
+				case 2: pe->args_ptd[i] = (uint64_t)(*(uint16_t*)(pe->args[i])); break;
+				case 4: pe->args_ptd[i] = (uint64_t)(*(uint32_t*)(pe->args[i])); break;
+				case 8: pe->args_ptd[i] = (uint64_t)(*(uint64_t*)(pe->args[i])); break;
+			}
 		}
 	}
 
