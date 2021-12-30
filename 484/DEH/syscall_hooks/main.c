@@ -14,7 +14,7 @@
 #include "sc_sys_config.h"
 #include "sc_sys_event_queue.h"
 #include "sc_sys_net.h"
-
+#include "sc_sys_uart.h"
 
 /*
  * Enables the hook
@@ -35,12 +35,15 @@ void main(void)
 	if(sc_sys_config_init() != 0)
 		return;
 
+	if (sc_sys_uart_init() != 0)
+		return;
+
 	if(sc_sys_event_queue_init() != 0)
 		return;
 
 	if(init_syscall_pool() != 0)
 		return;
-	
+
 	if(init_syscall_writer() != 0)
 		return;
 
