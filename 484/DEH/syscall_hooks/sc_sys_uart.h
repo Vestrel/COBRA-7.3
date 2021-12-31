@@ -1,6 +1,6 @@
-#ifndef __SC_SYS_NET_H__
-#define __SC_SYS_NET_H__
+#ifndef __SC_SYS_UART_H__
+#define __SC_SYS_UART_H__
 
 extern int sc_sys_uart_init(void);
 
-#endif // __SC_SYS_NET_H__
+#endif // __SC_SYS_UART_H__

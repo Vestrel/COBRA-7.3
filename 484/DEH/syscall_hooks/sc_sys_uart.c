@@ -9,6 +9,21 @@
 #include "utilities.h"
 #include "sc_sys_uart.h"
 
+typedef struct ps3av_pkt_reply_hdr
+{
+	uint16_t version;
+	uint16_t length;
+	uint32_t cid;
+	uint32_t status;
+} ps3av_pkt_reply_hdr;
+
+typedef struct ps3av_header
+{
+	uint16_t version;
+	uint16_t length;
+	uint32_t cid;
+} ps3av_header;
+
 SCI_NULL_PRECALL_PREPARE_CB(sys_uart_receive)
 SCI_CB_DUMP_BUFFER_POSTCALL_PREPARE(sys_uart_receive, 0, 1)
 SCI_NULL_PRE_WRITE_CB(sys_uart_receive)
@@ -28,10 +43,33 @@ SCI_POST_WRITE_CB(sys_uart_receive)
     {
         SCW_START
 
-        SCW_PRINTF("pkt FROM lv1 at 0x%lx\n", get_ticks());
-        SCW_PRINTF("\tbuf= ");
-		SCW_DUMP(buf, buf_len);
-        SCW_PRINTF("\n");
+        uint16_t crnt_offset = 0;
+
+        while (buf_len >= sizeof(ps3av_pkt_reply_hdr))
+        {
+            const ps3av_pkt_reply_hdr *pkt = (ps3av_pkt_reply_hdr *)((size_t)(buf) + crnt_offset);
+            void *pkt_data = (void *)((size_t)(pkt) + sizeof(ps3av_pkt_reply_hdr));
+            const uint16_t pkt_total_size = pkt->length + 4;
+
+            if (buf_len >= pkt_total_size)
+            {
+                SCW_PRINTF("pkt FROM lv1 at 0x%lx\n\t\tcid=0x%08x status=0x%08x size=%hu\n", get_ticks(), pkt->cid, pkt->status, pkt->length);
+
+                if (pkt->length > 8)
+                {
+                    SCW_PRINTF("\t\tbuf=");
+                    SCW_DUMP(pkt_data, pkt->length - 8);
+                    SCW_PRINTF("\n");
+                }
+
+                buf_len -= pkt_total_size;
+                crnt_offset += pkt_total_size;
+            }
+            else
+            {
+                break;
+            }
+        }
 
         SCW_FINISH
 	}
@@ -58,10 +96,33 @@ SCI_POST_WRITE_CB(sys_uart_send)
     {
         SCW_START
 
-        SCW_PRINTF("pkt TO lv1 at 0x%lx\n", get_ticks());
-        SCW_PRINTF("\tbuf= ");
-		SCW_DUMP(buf, buf_len);
-        SCW_PRINTF("\n");
+        uint16_t crnt_offset = 0;
+
+        while (buf_len >= sizeof(ps3av_header))
+        {
+            const ps3av_header *pkt = (ps3av_header *)((size_t)(buf) + crnt_offset);
+            void *pkt_data = (void *)((size_t)(pkt) + sizeof(ps3av_header));
+            const uint16_t pkt_total_size = pkt->length + 4;
+
+            if (buf_len >= pkt_total_size)
+            {
+                SCW_PRINTF("pkt TO lv1 at 0x%lx\n\t\tcid=0x%08x size=%hu\n", get_ticks(), pkt->cid, pkt->length);
+
+                if (pkt->length > 4)
+                {
+                    SCW_PRINTF("\t\tbuf=");
+                    SCW_DUMP(pkt_data, pkt->length - 4);
+                    SCW_PRINTF("\n");
+                }
+
+                buf_len -= pkt_total_size;
+                crnt_offset += pkt_total_size;
+            }
+            else
+            {
+                break;
+            }
+        }
 
         SCW_FINISH
 	}
